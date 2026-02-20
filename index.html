@@ -2,16 +2,66 @@
 <html lang="pt-pt">
 <head>
 <meta charset="UTF-8">
+
+<!-- 
+Viewport configured for proper mobile rendering.
+maximum-scale=1.0 prevents zoom-based layout shifts on mobile.
+-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
 <title>Onde anda o pica?</title>
+
+<!-- 
+Sets browser UI color. Matches the dark background.
+-->
 <meta name="theme-color" content="#020617">
 
 <style>
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #020617; color: #f1f5f9; padding-bottom: 50px; }
-.container { max-width: 680px; margin: 0 auto; padding: 20px; text-align: center; position: relative; }
-h1 { font-size: 2.2rem; margin-bottom: 6px; letter-spacing: -0.02em; }
-.subtitle { opacity: 0.6; font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; }
 
+/* =========================
+   GLOBAL LAYOUT
+   ========================= */
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #020617; /* dark navy background */
+  color: #f1f5f9;       /* soft light text */
+  padding-bottom: 50px; /* breathing room bottom */
+}
+
+/* Main centered container */
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+  position: relative; /* required for absolute positioning of about button */
+}
+
+/* Main title */
+h1 {
+  font-size: 2.2rem;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+/* Subtitle under title */
+.subtitle {
+  opacity: 0.6;
+  font-size: 0.95rem;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* =========================
+   ABOUT BUTTON (Top Right)
+   ========================= */
+
+/* 
+Absolute positioned GitHub link.
+Positioned relative to container.
+*/
 .about-btn {
   position: absolute;
   top: 20px;
@@ -25,26 +75,132 @@ h1 { font-size: 2.2rem; margin-bottom: 6px; letter-spacing: -0.02em; }
   color: #cbd5e1;
   transition: 0.2s ease;
 }
+
 .about-btn:hover {
   background: rgba(255,255,255,0.14);
 }
 
+/* =========================
+   CTA SECTION
+   ========================= */
+
 .cta-wrapper { margin-bottom: 35px; }
-.cta-badge { display: inline-block; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px 22px; backdrop-filter: blur(8px); }
-.cta-text { font-size: 0.9rem; margin-bottom: 12px; opacity: 0.85; }
-.cta-button { display: inline-block; background: #e5392b; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 6px 18px rgba(229,57,43,0.25); transition: transform 0.1s ease; }
+
+/* Glass-style badge container */
+.cta-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 18px 22px;
+  backdrop-filter: blur(8px); /* subtle glass effect */
+}
+
+.cta-text {
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  opacity: 0.85;
+}
+
+/* Red primary CTA button */
+.cta-button {
+  display: inline-block;
+  background: #e5392b;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(229,57,43,0.25);
+  transition: transform 0.1s ease;
+}
+
+/* =========================
+   CITY FILTER BUTTONS
+   ========================= */
 
 .filters { margin-bottom: 18px; }
-.filters button { background: #0f172a; border: 1px solid rgba(255,255,255,0.08); color: #cbd5e1; padding: 8px 16px; margin: 4px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s ease; }
-.filters button.active { background: #f1f5f9; color: #020617; }
 
-.status-bar { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; opacity: 0.8; }
-.indicator-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-.live-dot { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
-.offline-dot { background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
-@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+.filters button {
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #cbd5e1;
+  padding: 8px 16px;
+  margin: 4px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
 
-.card { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); border-left: 6px solid #334155; border-radius: 14px; padding: 16px; margin-bottom: 14px; text-align: left; }
+/* Active filter visually inverted */
+.filters button.active {
+  background: #f1f5f9;
+  color: #020617;
+}
+
+/* =========================
+   STATUS BAR
+   ========================= */
+
+/* Top info bar: left = connection status, right = last update */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+  opacity: 0.8;
+}
+
+.indicator-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* Green pulsing dot for active connection */
+.live-dot {
+  background-color: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse 2s infinite;
+}
+
+/* Orange dot for slower/offline state */
+.offline-dot {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+/* =========================
+   REPORT CARDS
+   ========================= */
+
+/* Base card style */
+.card {
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-left: 6px solid #334155; /* default fallback */
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+/* Line color variations */
 .card.azul { border-left-color: #3b6ea8; }
 .card.verde { border-left-color: #2f855a; }
 .card.amarela { border-left-color: #d4a017; }
@@ -52,15 +208,38 @@ h1 { font-size: 2.2rem; margin-bottom: 6px; letter-spacing: -0.02em; }
 .card.violeta { border-left-color: #7c3aed; }
 .card.laranja { border-left-color: #d97706; }
 
-.time { opacity: 0.6; font-size: 0.85rem; margin-top: 6px; }
-.group-badge { margin-top: 10px; font-size: 0.8rem; background: rgba(255, 120, 0, 0.15); color: #ff9800; padding: 6px 10px; border-radius: 8px; display: inline-block; }
-.empty { text-align: center; padding: 40px; opacity: 0.4; border: 2px dashed #1e293b; border-radius: 14px; }
+.time {
+  opacity: 0.6;
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
+/* Badge shown when multiple reports in same hour */
+.group-badge {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  background: rgba(255, 120, 0, 0.15);
+  color: #ff9800;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 40px;
+  opacity: 0.4;
+  border: 2px dashed #1e293b;
+  border-radius: 14px;
+}
 </style>
 </head>
 <body>
 
 <div class="container">
 
+  <!-- GitHub link -->
   <a 
     href="https://github.com/placeholdertemporary/ondeandaopica" 
     target="_blank" 
@@ -71,72 +250,135 @@ h1 { font-size: 2.2rem; margin-bottom: 6px; letter-spacing: -0.02em; }
   </a>
 
   <h1>Onde anda o pica?</h1>
-  <div class="subtitle">Relatos anónimos de revisores avistados <br> pelos metros de Portugal.</div>
+  <div class="subtitle">
+    Relatos anónimos de revisores avistados <br> pelos metros de Portugal.
+  </div>
 
+  <!-- Call-to-action submission area -->
   <div class="cta-wrapper">
     <div class="cta-badge">
       <div class="cta-text">Viste um pica? Avisa a malta.</div>
-      <a class="cta-button" href="https://forms.gle/6eaKK6AMvYhuVrsB6" target="_blank">REPORTA AQUI</a>
+      <a class="cta-button" href="https://forms.gle/6eaKK6AMvYhuVrsB6" target="_blank">
+        REPORTA AQUI
+      </a>
     </div>
   </div>
 
+  <!-- City filter toggle -->
   <div class="filters">
     <button id="btn-lisboa" class="active" onclick="setFilter('Lisboa')">Lisboa</button>
     <button id="btn-porto" onclick="setFilter('Porto')">Porto</button>
   </div>
 
+  <!-- Status and sync info -->
   <div class="status-bar">
-    <div><span id="status-dot" class="indicator-dot live-dot"></span> <span id="status-text">Live</span></div>
+    <div>
+      <span id="status-dot" class="indicator-dot live-dot"></span>
+      <span id="status-text">Live</span>
+    </div>
     <div id="last-update">A sincronizar...</div>
   </div>
 
+  <!-- Dynamic content inserted here -->
   <div id="updates-list"></div>
 </div>
 
 <script>
-/* JS unchanged — exactly your current logic */
+
+/* =========================
+   CONFIG
+   ========================= */
+
+/*
+Public Google Sheets TSV endpoint.
+Output format is tab-separated values.
+*/
 const TSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWA2yLCMN94pQiXOBZCKfylJ8IabIeoePmRP-toMmQtCzrQdjuaV5UR--SYtp3KqhYGBHyNioC1xxL/pub?gid=2130801913&single=true&output=tsv";
 
+/* Current selected city */
 let currentFilter = "Lisboa";
+
+/* Cache of last fetched sheet rows */
 let cachedRows = null;
+
+/* =========================
+   FILTER HANDLING
+   ========================= */
 
 function setFilter(city) {
   currentFilter = city;
-  document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
-  document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
+
+  // Update button active state
+  document.querySelectorAll(".filters button")
+    .forEach(b => b.classList.remove("active"));
+
+  document.getElementById(`btn-${city.toLowerCase()}`)
+    .classList.add("active");
+
+  // Re-render using cached data
   renderData();
 }
 
+/* =========================
+   FETCH DATA
+   ========================= */
+
 async function fetchData() {
   try {
+    /*
+    Add timestamp query param to bypass browser cache.
+    Prevents inconsistent refresh behavior.
+    */
     const response = await fetch(TSV_URL + "&t=" + Date.now());
+
     if (!response.ok) throw new Error("Network error");
 
     const text = await response.text();
+
+    /*
+    Parse TSV:
+    - Split lines
+    - Split columns by tab
+    */
     const rows = text.trim().split("\n").map(r => r.split("\t"));
+
     if (rows.length <= 1) return;
 
     cachedRows = rows;
+
+    // Set live indicator
     document.getElementById("status-dot").className = "indicator-dot live-dot";
     document.getElementById("status-text").innerText = "Live";
+
     renderData();
 
   } catch (e) {
     console.error(e);
+
+    // If fetch fails, show degraded state
     document.getElementById("status-dot").className = "indicator-dot offline-dot";
     document.getElementById("status-text").innerText = "Sincronização lenta...";
   }
 }
 
+/* =========================
+   DATA PROCESSING + RENDER
+   ========================= */
+
 function renderData() {
   if (!cachedRows) return;
 
   const container = document.getElementById("updates-list");
+
   const rows = [...cachedRows];
-  const headers = rows.shift();
+  const headers = rows.shift(); // remove header row
 
   const col = name => headers.indexOf(name);
 
+  /*
+  Dynamically resolve column indexes by header name.
+  Prevents breakage if column order changes.
+  */
   const idxMetro = col("Metro");
   const idxLisboa = col("Linha do Metro de Lisboa");
   const idxPorto = col("Linha do Metro do Porto");
@@ -157,13 +399,22 @@ function renderData() {
     "F": col("Direção - Linha F")
   };
 
+  /*
+  Groups are keyed by: Line + Direction + Hour, so multiple submissions in same hour are grouped together.
+  */
   const groups = {};
 
   rows.forEach(row => {
+
+    // Filter by selected city
     if (!row[idxMetro] || row[idxMetro].trim() !== currentFilter) return;
 
-    let line = currentFilter === "Lisboa" ? row[idxLisboa] : row[idxPorto];
+    let line = currentFilter === "Lisboa"
+      ? row[idxLisboa]
+      : row[idxPorto];
+
     if (!line) return;
+
     line = line.replace("Linha ", "").trim();
 
     const directionIndex = directionColumns[line];
@@ -175,6 +426,7 @@ function renderData() {
     const raw = row[idxTimestamp];
     if (!raw) return;
 
+    // Parse dd/mm/yy hh:mm
     const [datePart, timePart] = raw.split(" ");
     if (!datePart || !timePart) return;
 
@@ -185,6 +437,9 @@ function renderData() {
     const timestamp = new Date(year, month - 1, day, hour, minute);
     if (isNaN(timestamp)) return;
 
+    /*
+    Hour-level grouping key
+    */
     const hourKey = year + "-" + month + "-" + day + "-" + hour;
     const key = line + "|" + direction + "|" + hourKey;
 
@@ -192,23 +447,40 @@ function renderData() {
       groups[key] = { line, direction, count: 0, timestamp };
     }
 
+    // Count number of reports in that hour
     groups[key].count += 1;
 
+    /*
+    maxPicas logic:
+    Instead of summing (which could double-count same inspectors), take the maximum reported number.
+    */
     const num = parseInt(row[idxPicas]);
     if (!isNaN(num)) {
-      if (!groups[key].maxPicas) groups[key].maxPicas = num;
-      else groups[key].maxPicas = Math.max(groups[key].maxPicas, num);
+      if (!groups[key].maxPicas)
+        groups[key].maxPicas = num;
+      else
+        groups[key].maxPicas = Math.max(groups[key].maxPicas, num);
     }
 
     groups[key].tempo = row[idxTempo];
   });
 
-  const groupedEntries = Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+  // Sort newest first
+  const groupedEntries =
+    Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
 
   if (groupedEntries.length === 0) {
-    container.innerHTML = `<div class="empty">Nenhum avistamento reportado nas últimas 24 horas. Sorte a tua!</div>`;
+
+    container.innerHTML =
+      `<div class="empty">
+        Nenhum avistamento reportado nas últimas 24 horas. Sorte a tua!
+      </div>`;
+
   } else {
+
     let html = "";
+
+    // Map line to CSS class
     const colorMap = {
       "Azul": "azul",
       "Verde": "verde",
@@ -226,9 +498,19 @@ function renderData() {
       html += `
         <div class="card ${colorMap[g.line] || ""}">
           <strong>Linha ${g.line} → ${g.direction}</strong>
-          <div class="time">${g.maxPicas ? g.maxPicas + " picas" : ""}</div>
-          <div class="time">${g.tempo || ""}</div>
-          ${g.count > 1 ? `<div class="group-badge">🔥 ${g.count} avistamentos nesta hora</div>` : ""}
+          <div class="time">
+            ${g.maxPicas ? g.maxPicas + " picas" : ""}
+          </div>
+          <div class="time">
+            ${g.tempo || ""}
+          </div>
+          ${
+            g.count > 1
+              ? `<div class="group-badge">
+                   🔥 ${g.count} avistamentos nesta hora
+                 </div>`
+              : ""
+          }
         </div>
       `;
     });
@@ -236,13 +518,21 @@ function renderData() {
     container.innerHTML = html;
   }
 
+  // Update last sync time
   document.getElementById("last-update").innerText =
     "Atualizado às " +
-    new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+    new Date().toLocaleTimeString('pt-PT',{
+      hour:'2-digit',
+      minute:'2-digit'
+    });
 }
 
+/* Initial fetch */
 fetchData();
+
+/* Auto-refresh every 30 seconds */
 setInterval(fetchData, 30000);
+
 </script>
 </body>
 </html>
