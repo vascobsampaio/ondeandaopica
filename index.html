@@ -4,392 +4,211 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Onde anda o pica?</title>
-
 <meta name="theme-color" content="#020617">
 
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #020617;
-  color: #f1f5f9;
-  padding-bottom: 50px;
-}
-
-.container {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 20px;
-  text-align: center;
-}
-
-h1 {
-  font-size: 2.2rem;
-  margin-bottom: 6px;
-  letter-spacing: -0.02em;
-}
-
-.subtitle {
-  opacity: 0.6;
-  font-size: 0.95rem;
-  margin-bottom: 28px;
-  line-height: 1.5;
-}
-
-/* CTA */
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #020617; color: #f1f5f9; padding-bottom: 50px; }
+.container { max-width: 680px; margin: 0 auto; padding: 20px; text-align: center; }
+h1 { font-size: 2.2rem; margin-bottom: 6px; letter-spacing: -0.02em; }
+.subtitle { opacity: 0.6; font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; }
 .cta-wrapper { margin-bottom: 35px; }
-
-.cta-badge {
-  display: inline-block;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  padding: 18px 22px;
-  backdrop-filter: blur(8px);
-}
-
-.cta-text {
-  font-size: 0.95rem;
-  margin-bottom: 14px;
-  opacity: 0.9;
-}
-
-.cta-button {
-  display: inline-block;
-  background: #e5392b;
-  color: #ffffff;
-  text-decoration: none;
-  padding: 12px 22px;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: 0 6px 18px rgba(229,57,43,0.25);
-  transition: transform 0.1s ease;
-}
-
-.cta-button:active { transform: scale(0.96); }
-
-/* Filters */
+.cta-badge { display: inline-block; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px 22px; backdrop-filter: blur(8px); }
+.cta-button { display: inline-block; background: #e5392b; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 6px 18px rgba(229,57,43,0.25); transition: transform 0.1s ease; }
 .filters { margin-bottom: 18px; }
-
-.filters button {
-  background: #0f172a;
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #cbd5e1;
-  padding: 8px 16px;
-  margin: 4px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  opacity: 0.8;
-  transition: 0.2s ease;
-}
-
-.filters button.active {
-  background: #f1f5f9;
-  color: #020617;
-  opacity: 1;
-}
-
-/* Status */
-.status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 18px;
-  opacity: 0.8;
-}
-
-.indicator-dot {
-  height: 8px;
-  width: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 6px;
-}
-
-.live-dot {
-  background-color: #22c55e;
-  box-shadow: 0 0 8px #22c55e;
-  animation: pulse 2s infinite;
-}
-
-.offline-dot {
-  background-color: #ef4444;
-  box-shadow: 0 0 8px #ef4444;
-  animation: none;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.3; }
-  100% { opacity: 1; }
-}
-
-/* Cards */
-.card {
-  background: #0f172a;
-  border: 1px solid rgba(255,255,255,0.05);
-  border-left: 6px solid #334155;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 14px;
-  text-align: left;
-  transition: 0.2s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-}
-
+.filters button { background: #0f172a; border: 1px solid rgba(255,255,255,0.08); color: #cbd5e1; padding: 8px 16px; margin: 4px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s ease; }
+.filters button.active { background: #f1f5f9; color: #020617; }
+.status-bar { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; opacity: 0.8; }
+.indicator-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.live-dot { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+.offline-dot { background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+.card { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); border-left: 6px solid #334155; border-radius: 14px; padding: 16px; margin-bottom: 14px; text-align: left; }
 .card.azul { border-left-color: #3b6ea8; }
 .card.verde { border-left-color: #2f855a; }
 .card.amarela { border-left-color: #d4a017; }
 .card.vermelha { border-left-color: #c24141; }
 .card.violeta { border-left-color: #7c3aed; }
 .card.laranja { border-left-color: #d97706; }
-
-.time {
-  opacity: 0.6;
-  font-size: 0.85rem;
-  margin-top: 6px;
-}
-
-.group-badge {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  background: rgba(255, 120, 0, 0.15);
-  color: #ff9800;
-  padding: 6px 10px;
-  border-radius: 8px;
-  display: inline-block;
-}
-
-.empty {
-  text-align: center;
-  padding: 40px;
-  opacity: 0.4;
-  border: 2px dashed #1e293b;
-  border-radius: 14px;
-}
+.time { opacity: 0.6; font-size: 0.85rem; margin-top: 6px; }
+.group-badge { margin-top: 10px; font-size: 0.8rem; background: rgba(255, 120, 0, 0.15); color: #ff9800; padding: 6px 10px; border-radius: 8px; display: inline-block; }
+.empty { text-align: center; padding: 40px; opacity: 0.4; border: 2px dashed #1e293b; border-radius: 14px; }
 </style>
 </head>
 <body>
 
 <div class="container">
   <h1>Onde anda o pica?</h1>
-  <div class="subtitle">
-  Relatos anónimos de revisores <br> avistados pelos Metros de Portugal. 
-  </div>
+  <div class="subtitle">Relatos anónimos de revisores nos Metros de Portugal.</div>
 
   <div class="cta-wrapper">
     <div class="cta-badge">
-      <div class="cta-text">Viste um pica? Avisa a malta</div>
-      <a class="cta-button" href="https://forms.gle/6eaKK6AMvYhuVrsB6" target="_blank">
-        REPORTAR AGORA
-      </a>
+      <a class="cta-button" href="https://forms.gle/6eaKK6AMvYhuVrsB6" target="_blank">REPORTAR AGORA</a>
     </div>
   </div>
 
   <div class="filters">
-    <button class="active" onclick="setFilter('Lisboa', this)">Lisboa</button>
-    <button onclick="setFilter('Porto', this)">Porto</button>
+    <button id="btn-lisboa" class="active" onclick="setFilter('Lisboa')">Lisboa</button>
+    <button id="btn-porto" onclick="setFilter('Porto')">Porto</button>
   </div>
 
   <div class="status-bar">
-    <div><span id="status-dot" class="indicator-dot live-dot"></span> <span id="status-text">Live</span></div>
-    <div id="last-update">A carregar...</div>
+    <div><span id="status-dot" class="indicator-dot live-dot"></span> <span id="status-text">Ligado</span></div>
+    <div id="last-update">A sincronizar...</div>
   </div>
 
-  <div id="updates-list">
-    <div class="empty">A carregar dados...</div>
-  </div>
+  <div id="updates-list"></div>
 </div>
 
 <script>
 const TSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWA2yLCMN94pQiXOBZCKfylJ8IabIeoePmRP-toMmQtCzrQdjuaV5UR--SYtp3KqhYGBHyNioC1xxL/pub?gid=2130801913&single=true&output=tsv";
 
 let currentFilter = "Lisboa";
-let isFirstLoad = true;
+let cachedRows = null;
 
-function setFilter(city, btn) {
+function setFilter(city) {
   currentFilter = city;
   document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  loadData();
+  document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
+  renderData();
 }
 
-async function loadData() {
-  const container = document.getElementById("updates-list");
-  const statusDot = document.getElementById("status-dot");
-  const statusText = document.getElementById("status-text");
-
+async function fetchData() {
   try {
     const response = await fetch(TSV_URL + "&t=" + Date.now());
-    if (!response.ok) throw new Error("Network response was not ok");
-    
+    if (!response.ok) throw new Error("Network error");
+
     const text = await response.text();
     const rows = text.trim().split("\n").map(r => r.split("\t"));
-    const headers = rows.shift();
-    const col = name => headers.indexOf(name);
 
-    const idxMetro = col("Metro");
-    const idxLisboa = col("Linha do Metro de Lisboa");
-    const idxPorto = col("Linha do Metro do Porto");
-    const idxTimestamp = col("Carimbo de data/hora");
-    const idxPicas = col("Quantos picas?");
-    const idxTempo = col("Há quanto tempo?");
+    // Skip update if Google returns only header row
+    if (rows.length <= 1) return;
 
-    const directionColumns = {
-      "Azul": col("Direção - Linha Azul"),
-      "Verde": col("Direção - Linha Verde"),
-      "Amarela": col("Direção - Linha Amarela"),
-      "Vermelha": col("Direção - Linha Vermelha"),
-      "A": col("Direção - Linha A"),
-      "B": col("Direção - Linha B"),
-      "C": col("Direção - Linha C"),
-      "D": col("Direção - Linha D"),
-      "E": col("Direção - Linha E"),
-      "F": col("Direção - Linha F")
-    };
+    cachedRows = rows;
+    document.getElementById("status-dot").className = "indicator-dot live-dot";
+    document.getElementById("status-text").innerText = "Ligado";
 
-    const groups = {};
-
-    rows.forEach(row => {
-      if (!row[idxMetro] || row[idxMetro].trim() !== currentFilter) return;
-
-      let line = currentFilter === "Lisboa" ? row[idxLisboa] : row[idxPorto];
-      if (!line) return;
-
-      line = line.replace("Linha ", "").trim();
-
-      const directionIndex = directionColumns[line];
-      if (directionIndex === undefined) return;
-
-      const direction = row[directionIndex];
-      if (!direction) return;
-
-      const raw = row[idxTimestamp];
-      if (!raw) return;
-
-      const [datePart, timePart] = raw.split(" ");
-      if (!datePart || !timePart) return;
-
-      // Robust Date Parsing
-      const dateParts = datePart.split(/[-/]/); 
-      let year, month, day;
-      
-      if (dateParts[0].length === 4) {
-        // YYYY/MM/DD
-        year = parseInt(dateParts[0]);
-        month = parseInt(dateParts[1]);
-        day = parseInt(dateParts[2]);
-      } else {
-        // DD/MM/YY or DD/MM/YYYY
-        day = parseInt(dateParts[0]);
-        month = parseInt(dateParts[1]);
-        let y = dateParts[2];
-        year = y.length === 2 ? parseInt("20" + y) : parseInt(y);
-      }
-
-      const [hour, minute] = timePart.split(":");
-      const timestamp = new Date(year, month - 1, day, parseInt(hour), parseInt(minute));
-      if (isNaN(timestamp)) return;
-
-      const hourKey = year + "-" + month + "-" + day + "-" + hour;
-      const key = line + "|" + direction + "|" + hourKey;
-
-      if (!groups[key]) {
-        groups[key] = {
-          line,
-          direction,
-          count: 0,
-          totalPicas: 0,
-          tempo: row[idxTempo],
-          timestamp
-        };
-      }
-
-      groups[key].count += 1;
-      const num = parseInt(row[idxPicas]);
-      if (!isNaN(num)) groups[key].totalPicas += num;
-    });
-
-    container.innerHTML = "";
-
-    const groupedEntries = Object.values(groups)
-      .sort((a, b) => b.timestamp - a.timestamp);
-
-    if (groupedEntries.length === 0) {
-      container.innerHTML = `<div class="empty">Nenhum avistamento recente. Sorte a tua!</div>`;
-    } else {
-      const colorMap = {
-        "Azul": "azul",
-        "Verde": "verde",
-        "Amarela": "amarela",
-        "Vermelha": "vermelha",
-        "A": "azul",
-        "B": "vermelha",
-        "C": "verde",
-        "D": "amarela",
-        "E": "violeta",
-        "F": "laranja"
-      };
-
-      groupedEntries.forEach(group => {
-        const card = document.createElement("div");
-        card.className = "card " + (colorMap[group.line] || "");
-
-        let picaText = "";
-        if (group.totalPicas === 1) picaText = "1 pica";
-        else if (group.totalPicas > 1) picaText = group.totalPicas + " picas";
-
-        let cardHTML = `
-          <strong>Linha ${group.line} → ${group.direction}</strong>
-          <div class="time">${picaText}</div>
-          <div class="time">${group.tempo || ""}</div>
-        `;
-
-        if (group.count > 1) {
-          cardHTML += `<div class="group-badge">🔥 ${group.count} avistamentos agrupados nesta hora</div>`;
-        }
-
-        card.innerHTML = cardHTML;
-        container.appendChild(card);
-      });
-    }
-
-    // Reset UI to Live state if successful
-    statusDot.className = "indicator-dot live-dot";
-    statusText.innerText = "Live";
-    document.getElementById("last-update").innerText =
-      "Atualizado às " +
-      new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
-    
-    isFirstLoad = false;
+    renderData();
 
   } catch (e) {
-    console.error("Fetch failed:", e);
-    
-    // Offline State UI handling
-    if (isFirstLoad) {
-      container.innerHTML = `<div class="empty">Sem rede. Tenta novamente quando saíres do túnel.</div>`;
-    } else {
-      statusDot.className = "indicator-dot offline-dot";
-      statusText.innerText = "Offline";
-      document.getElementById("last-update").innerText = "A mostrar últimos dados conhecidos";
-    }
+    console.error(e);
+    document.getElementById("status-dot").className = "indicator-dot offline-dot";
+    document.getElementById("status-text").innerText = "Sincronização lenta...";
   }
 }
 
-loadData();
-setInterval(loadData, 60000);
-</script>
+function renderData() {
+  if (!cachedRows) return;
 
+  const container = document.getElementById("updates-list");
+  const rows = [...cachedRows];
+  const headers = rows.shift();
+
+  const col = name => headers.indexOf(name);
+
+  const idxMetro = col("Metro");
+  const idxLisboa = col("Linha do Metro de Lisboa");
+  const idxPorto = col("Linha do Metro do Porto");
+  const idxTimestamp = col("Carimbo de data/hora");
+  const idxPicas = col("Quantos picas?");
+  const idxTempo = col("Há quanto tempo?");
+
+  const directionColumns = {
+    "Azul": col("Direção - Linha Azul"),
+    "Verde": col("Direção - Linha Verde"),
+    "Amarela": col("Direção - Linha Amarela"),
+    "Vermelha": col("Direção - Linha Vermelha"),
+    "A": col("Direção - Linha A"),
+    "B": col("Direção - Linha B"),
+    "C": col("Direção - Linha C"),
+    "D": col("Direção - Linha D"),
+    "E": col("Direção - Linha E"),
+    "F": col("Direção - Linha F")
+  };
+
+  const groups = {};
+
+  rows.forEach(row => {
+    if (!row[idxMetro] || row[idxMetro].trim() !== currentFilter) return;
+
+    let line = currentFilter === "Lisboa" ? row[idxLisboa] : row[idxPorto];
+    if (!line) return;
+    line = line.replace("Linha ", "").trim();
+
+    const directionIndex = directionColumns[line];
+    if (directionIndex === undefined) return;
+
+    const direction = row[directionIndex];
+    if (!direction) return;
+
+    const raw = row[idxTimestamp];
+    if (!raw) return;
+
+    const [datePart, timePart] = raw.split(" ");
+    if (!datePart || !timePart) return;
+
+    const [day, month, yearShort] = datePart.split("/");
+    const [hour, minute] = timePart.split(":");
+
+    const year = parseInt("20" + yearShort);
+    const timestamp = new Date(year, month - 1, day, hour, minute);
+    if (isNaN(timestamp)) return;
+
+    const hourKey = year + "-" + month + "-" + day + "-" + hour;
+    const key = line + "|" + direction + "|" + hourKey;
+
+    if (!groups[key]) {
+      groups[key] = { line, direction, count: 0, totalPicas: 0, tempo: row[idxTempo], timestamp };
+    }
+
+   groups[key].count += 1;
+
+const num = parseInt(row[idxPicas]);
+if (!isNaN(num)) {
+  if (!groups[key].maxPicas) groups[key].maxPicas = num;
+  else groups[key].maxPicas = Math.max(groups[key].maxPicas, num);
+}
+  });
+
+  const groupedEntries = Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+
+  if (groupedEntries.length === 0) {
+    container.innerHTML = `<div class="empty">Nenhum avistamento recente.</div>`;
+  } else {
+    let html = "";
+    const colorMap = {
+      "Azul": "azul",
+      "Verde": "verde",
+      "Amarela": "amarela",
+      "Vermelha": "vermelha",
+      "A": "azul",
+      "B": "vermelha",
+      "C": "verde",
+      "D": "amarela",
+      "E": "violeta",
+      "F": "laranja"
+    };
+
+    groupedEntries.forEach(g => {
+      html += `
+        <div class="card ${colorMap[g.line] || ""}">
+          <strong>Linha ${g.line} → ${g.direction}</strong>
+          <div class="time">${g.maxPicas ? g.maxPicas + " picas" : ""}</div>
+          <div class="time">${g.tempo || ""}</div>
+          ${g.count > 1 ? `<div class="group-badge">🔥 ${g.count} avistamentos nesta hora</div>` : ""}
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  document.getElementById("last-update").innerText =
+    "Atualizado às " +
+    new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+}
+
+fetchData();
+setInterval(fetchData, 30000);
+</script>
 </body>
 </html>
