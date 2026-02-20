@@ -6,7 +6,7 @@
 
 Os relatos de avistamentos são submetidos por passageiros anónimos e apresentados em tempo quase real, organizados por linha, direção e hora.
 
-- 👉 Live: 
+- 👉 Live: https://ondeandaopica.pt/
 - 👉 Formulário: https://forms.gle/ufkTC7mjBWwSbM7u7
 
 Projeto independente, feito por um humano e mantido pela comunidade.
