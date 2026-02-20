@@ -37,7 +37,6 @@ h1 {
 }
 
 /* CTA */
-
 .cta-wrapper { margin-bottom: 35px; }
 
 .cta-badge {
@@ -71,7 +70,6 @@ h1 {
 .cta-button:active { transform: scale(0.96); }
 
 /* Filters */
-
 .filters { margin-bottom: 18px; }
 
 .filters button {
@@ -95,7 +93,6 @@ h1 {
 }
 
 /* Status */
-
 .status-bar {
   display: flex;
   justify-content: space-between;
@@ -107,15 +104,24 @@ h1 {
   opacity: 0.8;
 }
 
-.live-dot {
+.indicator-dot {
   height: 8px;
   width: 8px;
-  background-color: #22c55e;
   border-radius: 50%;
   display: inline-block;
   margin-right: 6px;
+}
+
+.live-dot {
+  background-color: #22c55e;
   box-shadow: 0 0 8px #22c55e;
   animation: pulse 2s infinite;
+}
+
+.offline-dot {
+  background-color: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  animation: none;
 }
 
 @keyframes pulse {
@@ -125,7 +131,6 @@ h1 {
 }
 
 /* Cards */
-
 .card {
   background: #0f172a;
   border: 1px solid rgba(255,255,255,0.05);
@@ -197,7 +202,7 @@ h1 {
   </div>
 
   <div class="status-bar">
-    <div><span class="live-dot"></span> Live</div>
+    <div><span id="status-dot" class="indicator-dot live-dot"></span> <span id="status-text">Live</span></div>
     <div id="last-update">A carregar...</div>
   </div>
 
@@ -210,6 +215,7 @@ h1 {
 const TSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWA2yLCMN94pQiXOBZCKfylJ8IabIeoePmRP-toMmQtCzrQdjuaV5UR--SYtp3KqhYGBHyNioC1xxL/pub?gid=2130801913&single=true&output=tsv";
 
 let currentFilter = "Lisboa";
+let isFirstLoad = true;
 
 function setFilter(city, btn) {
   currentFilter = city;
@@ -220,9 +226,13 @@ function setFilter(city, btn) {
 
 async function loadData() {
   const container = document.getElementById("updates-list");
+  const statusDot = document.getElementById("status-dot");
+  const statusText = document.getElementById("status-text");
 
   try {
     const response = await fetch(TSV_URL + "&t=" + Date.now());
+    if (!response.ok) throw new Error("Network response was not ok");
+    
     const text = await response.text();
     const rows = text.trim().split("\n").map(r => r.split("\t"));
     const headers = rows.shift();
@@ -270,11 +280,25 @@ async function loadData() {
       const [datePart, timePart] = raw.split(" ");
       if (!datePart || !timePart) return;
 
-      const [day, month, yearShort] = datePart.split("/");
-      const [hour, minute] = timePart.split(":");
+      // Robust Date Parsing
+      const dateParts = datePart.split(/[-/]/); 
+      let year, month, day;
+      
+      if (dateParts[0].length === 4) {
+        // YYYY/MM/DD
+        year = parseInt(dateParts[0]);
+        month = parseInt(dateParts[1]);
+        day = parseInt(dateParts[2]);
+      } else {
+        // DD/MM/YY or DD/MM/YYYY
+        day = parseInt(dateParts[0]);
+        month = parseInt(dateParts[1]);
+        let y = dateParts[2];
+        year = y.length === 2 ? parseInt("20" + y) : parseInt(y);
+      }
 
-      const year = parseInt("20" + yearShort);
-      const timestamp = new Date(year, parseInt(month)-1, parseInt(day), parseInt(hour), parseInt(minute));
+      const [hour, minute] = timePart.split(":");
+      const timestamp = new Date(year, month - 1, day, parseInt(hour), parseInt(minute));
       if (isNaN(timestamp)) return;
 
       const hourKey = year + "-" + month + "-" + day + "-" + hour;
@@ -303,51 +327,63 @@ async function loadData() {
 
     if (groupedEntries.length === 0) {
       container.innerHTML = `<div class="empty">Nenhum avistamento recente. Sorte a tua!</div>`;
-      return;
+    } else {
+      const colorMap = {
+        "Azul": "azul",
+        "Verde": "verde",
+        "Amarela": "amarela",
+        "Vermelha": "vermelha",
+        "A": "azul",
+        "B": "vermelha",
+        "C": "verde",
+        "D": "amarela",
+        "E": "violeta",
+        "F": "laranja"
+      };
+
+      groupedEntries.forEach(group => {
+        const card = document.createElement("div");
+        card.className = "card " + (colorMap[group.line] || "");
+
+        let picaText = "";
+        if (group.totalPicas === 1) picaText = "1 pica";
+        else if (group.totalPicas > 1) picaText = group.totalPicas + " picas";
+
+        let cardHTML = `
+          <strong>Linha ${group.line} → ${group.direction}</strong>
+          <div class="time">${picaText}</div>
+          <div class="time">${group.tempo || ""}</div>
+        `;
+
+        if (group.count > 1) {
+          cardHTML += `<div class="group-badge">🔥 ${group.count} avistamentos agrupados nesta hora</div>`;
+        }
+
+        card.innerHTML = cardHTML;
+        container.appendChild(card);
+      });
     }
 
-    const colorMap = {
-      "Azul": "azul",
-      "Verde": "verde",
-      "Amarela": "amarela",
-      "Vermelha": "vermelha",
-      "A": "azul",
-      "B": "vermelha",
-      "C": "verde",
-      "D": "amarela",
-      "E": "violeta",
-      "F": "laranja"
-    };
-
-    groupedEntries.forEach(group => {
-      const card = document.createElement("div");
-      card.className = "card " + (colorMap[group.line] || "");
-
-      let picaText = "";
-      if (group.totalPicas === 1) picaText = "1 pica";
-      else if (group.totalPicas > 1) picaText = group.totalPicas + " picas";
-
-      let cardHTML = `
-        <strong>Linha ${group.line} → ${group.direction}</strong>
-        <div class="time">${picaText}</div>
-        <div class="time">${group.tempo || ""}</div>
-      `;
-
-      if (group.count > 1) {
-        cardHTML += `<div class="group-badge">🔥 ${group.count} avistamentos agrupados nesta hora</div>`;
-      }
-
-      card.innerHTML = cardHTML;
-      container.appendChild(card);
-    });
-
+    // Reset UI to Live state if successful
+    statusDot.className = "indicator-dot live-dot";
+    statusText.innerText = "Live";
     document.getElementById("last-update").innerText =
       "Atualizado às " +
       new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+    
+    isFirstLoad = false;
 
   } catch (e) {
-    container.innerHTML = `<div class="empty">Erro na ligação.</div>`;
-    console.error(e);
+    console.error("Fetch failed:", e);
+    
+    // Offline State UI handling
+    if (isFirstLoad) {
+      container.innerHTML = `<div class="empty">Sem rede. Tenta novamente quando saíres do túnel.</div>`;
+    } else {
+      statusDot.className = "indicator-dot offline-dot";
+      statusText.innerText = "Offline";
+      document.getElementById("last-update").innerText = "A mostrar últimos dados conhecidos";
+    }
   }
 }
 
