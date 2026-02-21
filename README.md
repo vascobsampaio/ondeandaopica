@@ -10,7 +10,7 @@ Os relatos são submetidos de forma anónima por passageiros e apresentados em t
 
 ## 💻 Stack
 
-Este projeto foi construído com uma filosofia de baixo custo e complexidade mínima, utilizando apenas ferramentas e serviços gratuitos.
+Este projeto foi construído com uma filosofia de baixo custo, simplicidade estrutural e infraestrutura mínima.
 
 **Arquitetura:** HTML + Vanilla JS → Supabase (Postgres + RLS) → GitHub Pages
 
@@ -28,7 +28,7 @@ Se quiseres ajudar, abre um issue, faz uma fork, manda um PR, ou escreve para in
 
 - 💻 Código: Pull requests são bem-vindos, sejam correções ou novas funcionalidades.
 - 🎨 UX/UI: Sugestões para melhorar a interface, especialmente a experiência mobile.
-- 📌 Expansão: Ajudar a mapear direções/estações de outras redes.
+- 🗺️ Expansão: Ajudar a mapear direções/estações de outras redes.
 
 ---
 
@@ -46,4 +46,8 @@ Ideias em aberto:
 
 ## ⚠️ Disclaimer
 
-"Onde anda o pica?" é um projeto experimental, independente e sem fins lucrativos, criado para partilha informal de informação entre passageiros, sem qualquer afiliação a operadores de transportes públicos ou privados.
+Projeto experimental, independente e sem fins lucrativos, criado para partilha informal de informação entre passageiros.
+
+Não tem qualquer afiliação a operadores de transportes públicos ou privados.
+
+Desenvolvido por um humano. Mantido pela comunidade.
