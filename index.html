@@ -17,7 +17,6 @@
 <meta property="og:image" content="https://ondeandaopica.pt/preview.png">
 
 <style>
-/* (ALL YOUR CSS REMAINS EXACTLY THE SAME — UNCHANGED) */
 body { margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#020617;color:#f1f5f9;padding-bottom:50px;}
 .container { max-width:680px;margin:0 auto;padding:20px;text-align:center;position:relative;}
 h1 { font-size:2.2rem;margin-bottom:6px;letter-spacing:-0.02em;}
@@ -88,38 +87,23 @@ h1 { font-size:2.2rem;margin-bottom:6px;letter-spacing:-0.02em;}
 <div id="updates-list"></div>
 </div>
 
-<!-- supabaseClient Client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabaseClient/supabaseClient-js@2"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
-/* ===============================
-   supabaseClient CONFIG
-================================ */
-   
-const supabaseClient = window.supabaseClient.createClient(
-  "https://yluetigafaiuwxotezay.supabaseClient.co",
+const supabaseClient = window.supabase.createClient(
+  "https://yluetigafaiuwxotezay.supabase.co",
   "sb_publishable_4UYJd6-oteBz1Jt0MTLgOg_LSZHOh2G"
 );
 
 let currentFilter = "Lisboa";
 let cachedRows = null;
 
-/* ===============================
-   STATUS
-================================ */
-
 function updateStatus(isLive) {
   const dot = document.getElementById("status-dot");
   const text = document.getElementById("status-text");
-
   dot.className = "indicator-dot " + (isLive ? "live-dot" : "offline-dot");
   text.innerText = isLive ? "Live" : "Stale";
 }
-
-/* ===============================
-   GROUPING LOGIC (UNCHANGED BEHAVIOR)
-================================ */
 
 function buildCardHTML(group, colorMap) {
   return `
@@ -141,10 +125,6 @@ function setFilter(city) {
   renderData();
 }
 
-/* ===============================
-   FETCH FROM supabaseClient
-================================ */
-
 async function fetchData() {
   try {
     const { data, error } = await supabaseClient
@@ -165,19 +145,13 @@ async function fetchData() {
   }
 }
 
-/* ===============================
-   RENDER
-================================ */
-
 function renderData() {
   if (!cachedRows) return;
 
   const container = document.getElementById("updates-list");
-
   const groups = {};
 
   cachedRows.forEach(row => {
-
     if (row.city !== currentFilter) return;
 
     const timestamp = new Date(row.created_at);
@@ -237,12 +211,8 @@ function renderData() {
     });
 }
 
-/* ===============================
-   INIT
-================================ */
-
 fetchData();
-setInterval(fetchData, 15000); // now truly real-time
+setInterval(fetchData, 15000);
 
 </script>
 </body>
