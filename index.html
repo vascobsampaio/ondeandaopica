@@ -310,7 +310,7 @@ function renderReports(){
     return `
       <div class="card" style="border-left:6px solid ${lineColor}">
         <strong>Linha ${escapeHTML(r.line)} → ${escapeHTML(r.direction)}</strong>
-        ${r.picas ? `<div class="time">${escapeHTML(r.picas)} picas</div>` : ""}
+       ${r.picas ? `<div class="time">${r.picas >= 3 ? "3+" : r.picas} pica${r.picas !== 1 ? "s" : ""}</div>` : ""}
         <div class="time">${timeAgo(r.created_at)}</div>
       </div>
     `;
@@ -364,7 +364,11 @@ async function init(){
       if (status === 'SUBSCRIBED') updateStatus(true);
       else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') updateStatus(false);
     });
-
+// inside init(), after the channel.subscribe() block
+setInterval(() => {
+  fetchReports();
+}, 60000); // silently re-fetches every 60 seconds
+  
   // Native browser online/offline events as a fallback signal
   window.addEventListener('online', () => updateStatus(true));
   window.addEventListener('offline', () => updateStatus(false));
