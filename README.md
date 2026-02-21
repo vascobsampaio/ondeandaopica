@@ -6,7 +6,6 @@ Atualmente cobre o Metro de Lisboa e o Metro do Porto — só são mostrados avi
 
 Os relatos são submetidos anonimamente por passageiros e apresentados em tempo quase real. 
 
----
 
 ## 💻 Stack
 
@@ -20,7 +19,7 @@ Construído com uma filosofia de baixo custo, simplicidade estrutural e infraest
 | Backend       | Supabase (Postgres)     | Armazenamento estruturado com RLS    |
 | Hosting       | GitHub Pages            | Distribuição sob domínio próprio     |
 
----
+
 
 ## 🤝 Contribuir
 
@@ -30,7 +29,6 @@ Se quiseres ajudar, estás à vontade para contribuir. Abre um issue, faz um for
 - 🎨 UX/UI: Sugestões para tornar a interface mais fluida, especialmente em mobile.
 - 🗺️ Expansão: Ajudar a mapear e validar as linhas/direções de outras redes (e.g., CP).
 
----
 
 ## 🛠 Roadmap
 
@@ -41,7 +39,6 @@ Ideias em aberto:
 - Alertas por linha
 - Expansão para outras redes (e.g. CP)
 
----
 
 ## ⚠️ Disclaimer
 
