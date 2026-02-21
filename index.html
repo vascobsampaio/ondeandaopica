@@ -126,8 +126,15 @@ let cachedReports = [];
 let cachedLines = [];
 let currentFilter = "Lisboa";
 
-function openModal(){ document.getElementById("reportModal").style.display="flex"; }
-function closeModal(){ document.getElementById("reportModal").style.display="none"; }
+function openModal(){ 
+  document.getElementById("reportModal").style.display="flex";
+
+  const citySelect = document.getElementById("citySelect");
+  citySelect.value = currentFilter;
+
+  populateLines(currentFilter);
+}
+  function closeModal(){ document.getElementById("reportModal").style.display="none"; }
 
 async function loadLines(){
   const { data } = await supabaseClient
