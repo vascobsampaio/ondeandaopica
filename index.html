@@ -2,7 +2,6 @@
 <html lang="pt-pt">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
 <title>Onde anda o pica?</title>
@@ -10,11 +9,6 @@
 <link rel="apple-touch-icon" href="/preview.png">
 <link rel="shortcut icon" href="/preview.png">
 <meta name="theme-color" content="#020617">
-<meta property="og:title" content="Onde anda o pica?">
-<meta property="og:description" content="O passe pesa na carteira — a multa ainda mais.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://ondeandaopica.pt">
-<meta property="og:image" content="https://ondeandaopica.pt/preview.png">
 
 <style>
 body { margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#020617;color:#f1f5f9;padding-bottom:50px;}
@@ -26,7 +20,7 @@ h1 { font-size:2.2rem;margin-bottom:6px;letter-spacing:-0.02em;}
 .cta-wrapper { margin-bottom:35px;}
 .cta-badge { display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px 22px;backdrop-filter:blur(8px);}
 .cta-text { font-size:0.9rem;margin-bottom:12px;opacity:0.85;}
-.cta-button { display:inline-block;background:#e5392b;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:10px;font-size:0.85rem;font-weight:600;box-shadow:0 6px 18px rgba(229,57,43,0.25);}
+.cta-button { display:inline-block;background:#e5392b;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:10px;font-size:0.85rem;font-weight:600;box-shadow:0 6px 18px rgba(229,57,43,0.25);cursor:pointer;}
 .filters { margin-bottom:18px;}
 .filters button { background:#0f172a;border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;padding:8px 16px;margin:4px;border-radius:10px;cursor:pointer;font-size:0.85rem;font-weight:600;}
 .filters button.active { background:#f1f5f9;color:#020617;}
@@ -35,15 +29,17 @@ h1 { font-size:2.2rem;margin-bottom:6px;letter-spacing:-0.02em;}
 .live-dot { background-color:#22c55e;box-shadow:0 0 8px #22c55e;}
 .offline-dot { background-color:#f59e0b;box-shadow:0 0 8px #f59e0b;}
 .card { background:#0f172a;border:1px solid rgba(255,255,255,0.05);border-left:6px solid #334155;border-radius:14px;padding:16px;margin-bottom:14px;text-align:left;}
-.card.azul { border-left-color:#3b6ea8;}
-.card.verde { border-left-color:#2f855a;}
-.card.amarela { border-left-color:#d4a017;}
-.card.vermelha { border-left-color:#c24141;}
-.card.violeta { border-left-color:#7c3aed;}
-.card.laranja { border-left-color:#d97706;}
 .time { opacity:0.6;font-size:0.85rem;margin-top:6px;}
-.group-badge { margin-top:10px;font-size:0.8rem;background:rgba(255,120,0,0.15);color:#ff9800;padding:6px 10px;border-radius:8px;display:inline-block;}
 .empty { text-align:center;padding:40px;opacity:0.4;border:2px dashed #1e293b;border-radius:14px;}
+
+/* Modal */
+.modal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;}
+.modal-content { background:#0f172a;padding:24px;border-radius:14px;width:90%;max-width:400px;text-align:left;}
+.modal-content h3 { margin-top:0;}
+.modal-content select, .modal-content button {
+  width:100%;margin-bottom:12px;padding:10px;border-radius:8px;border:1px solid #1e293b;background:#020617;color:#f1f5f9;
+}
+.close-btn { text-align:right;font-size:0.8rem;cursor:pointer;opacity:0.6;}
 </style>
 </head>
 <body>
@@ -65,9 +61,7 @@ h1 { font-size:2.2rem;margin-bottom:6px;letter-spacing:-0.02em;}
 <div class="cta-wrapper">
   <div class="cta-badge">
     <div class="cta-text">Viste um pica? Avisa a malta.</div>
-    <a class="cta-button"
-       href="https://forms.gle/6eaKK6AMvYhuVrsB6"
-       target="_blank">REPORTA AQUI</a>
+    <div class="cta-button" onclick="openModal()">REPORTA AQUI</div>
   </div>
 </div>
 
@@ -87,6 +81,26 @@ h1 { font-size:2.2rem;margin-bottom:6px;letter-spacing:-0.02em;}
 <div id="updates-list"></div>
 </div>
 
+<!-- Modal -->
+<div id="reportModal" class="modal">
+  <div class="modal-content">
+    <div class="close-btn" onclick="closeModal()">Fechar ✕</div>
+    <h3>Reportar avistamento</h3>
+
+    <select id="citySelect"></select>
+    <select id="lineSelect"></select>
+    <select id="directionSelect"></select>
+    <select id="picasSelect">
+      <option value="">Nº picas</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3+</option>
+    </select>
+
+    <button onclick="submitReport()">Enviar</button>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
@@ -95,116 +109,120 @@ const supabaseClient = window.supabase.createClient(
   "sb_publishable_4UYJd6-oteBz1Jt0MTLgOg_LSZHOh2G"
 );
 
+let lines = [];
+let directions = [];
+let cachedRows = [];
 let currentFilter = "Lisboa";
-let cachedRows = null;
 
-function updateStatus(isLive) {
-  const dot = document.getElementById("status-dot");
-  const text = document.getElementById("status-text");
-  dot.className = "indicator-dot " + (isLive ? "live-dot" : "offline-dot");
-  text.innerText = isLive ? "Live" : "Stale";
+function openModal() {
+  document.getElementById("reportModal").style.display = "flex";
+}
+function closeModal() {
+  document.getElementById("reportModal").style.display = "none";
 }
 
-function buildCardHTML(group) {
-  return `
-    <div class="card ${group.color || ""}">
-      <strong>Linha ${group.line} → ${group.direction}</strong>
-      <div class="time">${group.maxPicas ? group.maxPicas + " picas" : ""}</div>
-      <div class="time">${group.tempo || ""}</div>
-      ${group.count > 1 ? `<div class="group-badge">🔥 ${group.count} avistamentos nesta hora</div>` : ""}
-    </div>
-  `;
+async function loadFormData() {
+  const { data: linesData } = await supabaseClient.from("lines").select("*");
+  const { data: dirData } = await supabaseClient.from("directions").select("*");
+  lines = linesData || [];
+  directions = dirData || [];
+  populateCities();
 }
 
-function setFilter(city) {
-  currentFilter = city;
-  document.querySelectorAll(".filters button")
-    .forEach(b => b.classList.remove("active"));
-  document.getElementById(`btn-${city.toLowerCase()}`)
-    .classList.add("active");
+function populateCities() {
+  const citySelect = document.getElementById("citySelect");
+  citySelect.innerHTML = `<option value="">Cidade</option>`;
+  ["Lisboa","Porto"].forEach(city=>{
+    citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+  });
+  citySelect.onchange = populateLines;
+}
+
+function populateLines() {
+  const city = document.getElementById("citySelect").value;
+  const lineSelect = document.getElementById("lineSelect");
+  lineSelect.innerHTML = `<option value="">Linha</option>`;
+  lines.filter(l=>l.city===city)
+    .forEach(l=>{
+      lineSelect.innerHTML += `<option value="${l.id}">${l.label}</option>`;
+    });
+  lineSelect.onchange = populateDirections;
+}
+
+function populateDirections() {
+  const lineId = document.getElementById("lineSelect").value;
+  const dirSelect = document.getElementById("directionSelect");
+  dirSelect.innerHTML = `<option value="">Direção</option>`;
+  directions.filter(d=>d.line_id==lineId)
+    .forEach(d=>{
+      dirSelect.innerHTML += `<option value="${d.id}">${d.label}</option>`;
+    });
+}
+
+async function submitReport() {
+  const city = document.getElementById("citySelect").value;
+  const line_id = document.getElementById("lineSelect").value;
+  const direction_id = document.getElementById("directionSelect").value;
+  const picas = document.getElementById("picasSelect").value;
+
+  if(!city || !line_id || !direction_id){
+    alert("Preenche todos os campos.");
+    return;
+  }
+
+  await supabaseClient.from("reports").insert([{
+    city,
+    line_id,
+    direction_id,
+    picas: picas || null
+  }]);
+
+  closeModal();
+  fetchData();
+}
+
+function timeAgo(timestamp){
+  const diff = Math.floor((Date.now()-new Date(timestamp))/60000);
+  if(diff < 1) return "agora mesmo";
+  if(diff === 1) return "há 1 min";
+  if(diff < 60) return `há ${diff} min`;
+  return "há mais de 1h";
+}
+
+async function fetchData(){
+  const { data } = await supabaseClient
+    .from("reports")
+    .select(`
+      created_at,
+      picas,
+      city,
+      line:lines(label),
+      direction:directions(label)
+    `)
+    .gte("created_at", new Date(Date.now()-24*60*60*1000).toISOString())
+    .order("created_at",{ascending:false});
+
+  cachedRows = data || [];
   renderData();
 }
 
-async function fetchData() {
-  try {
-    const { data, error } = await supabaseClient
-      .from("reports")
-      .select(`
-        id,
-        created_at,
-        picas,
-        tempo,
-        lines (
-          city,
-          name,
-          color
-        ),
-        directions (
-          label
-        )
-      `)
-      .gte("created_at", new Date(Date.now() - 24*60*60*1000).toISOString())
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    cachedRows = data;
-    updateStatus(true);
-    renderData();
-
-  } catch (err) {
-    console.error(err);
-    updateStatus(false);
-  }
-}
-
-function renderData() {
-  if (!cachedRows) return;
-
+function renderData(){
   const container = document.getElementById("updates-list");
-  const groups = {};
+  const rows = cachedRows.filter(r=>r.city===currentFilter);
 
-  cachedRows.forEach(row => {
-
-    if (!row.lines || !row.directions) return;
-    if (row.lines.city !== currentFilter) return;
-
-    const timestamp = new Date(row.created_at);
-    const hourKey = `${timestamp.getFullYear()}-${timestamp.getMonth()}-${timestamp.getDate()}-${timestamp.getHours()}`;
-    const key = `${row.lines.name}|${row.directions.label}|${hourKey}`;
-
-    if (!groups[key]) {
-      groups[key] = {
-        line: row.lines.name,
-        direction: row.directions.label,
-        color: row.lines.color,
-        count: 0,
-        timestamp
-      };
-    }
-
-    groups[key].count += 1;
-
-    if (row.picas) {
-      groups[key].maxPicas = groups[key].maxPicas
-        ? Math.max(groups[key].maxPicas, row.picas)
-        : row.picas;
-    }
-
-    groups[key].tempo = row.tempo;
-  });
-
-  const groupedEntries =
-    Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
-
-  if (groupedEntries.length === 0) {
+  if(rows.length===0){
     container.innerHTML =
       `<div class="empty">Nenhum avistamento reportado nas últimas 24 horas. Sorte a tua!</div>`;
     return;
   }
 
-  container.innerHTML =
-    groupedEntries.map(g => buildCardHTML(g)).join("");
+  container.innerHTML = rows.map(r=>`
+    <div class="card">
+      <strong>Linha ${r.line?.label || "-"} → ${r.direction?.label || "-"}</strong>
+      ${r.picas ? `<div class="time">${r.picas} picas</div>` : ""}
+      <div class="time">${timeAgo(r.created_at)}</div>
+    </div>
+  `).join("");
 
   document.getElementById("last-update").innerText =
     "Atualizado às " +
@@ -214,8 +232,16 @@ function renderData() {
     });
 }
 
+function setFilter(city){
+  currentFilter = city;
+  document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
+  document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
+  renderData();
+}
+
+loadFormData();
 fetchData();
-setInterval(fetchData, 15000);
+setInterval(fetchData,15000);
 
 </script>
 </body>
