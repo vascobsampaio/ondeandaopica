@@ -1,26 +1,26 @@
 # 🚇 Onde anda o pica?
 
-🔗 [ondeandaopica.pt](https://ondeandaopica.pt)
+[ondeandaopica.pt](https://ondeandaopica.pt) é uma aplicação web leve que mostra avistamentos de revisores nos transportes públicos em Portugal.
 
-Aplicação web que mostra avistamentos recentes de revisores nos transportes públicos (começando pelos metros de Lisboa e Porto).
+A aplicação apresenta apenas avistamentos submetidos nas últimas 24 horas — atualmente no Metro de Lisboa e no Metro do Porto.
 
-Os relatos de avistamentos são submetidos de forma anónima por passageiros e apresentados em tempo quase real.
+Os relatos são submetidos de forma anónima por passageiros e apresentados em tempo quase real.
+
+---
 
 ## 💻 Stack
 
-Este projeto foi construído com uma filosofia de custo e complexidade mínimos, utilizando apenas ferramentas e serviços gratuitos.
+Este projeto foi construído com uma filosofia de baixo custo e complexidade mínima, utilizando apenas ferramentas e serviços gratuitos.
 
-**Arquitetura:** Google Form → Google Sheets → HTML + JavaScript → GitHub Pages
+**Arquitetura:** HTML + Vanilla JS → Supabase (Postgres + RLS) → GitHub Pages
 
+| Camada        | Tecnologia              | Função                              |
+|---------------|-------------------------|--------------------------------------|
+| Frontend      | HTML + Vanilla JS       | UI, fetch de dados e renderização    |
+| Base de Dados | Supabase (Postgres)     | Armazenamento estruturado            |
+| Hosting       | GitHub Pages            | Distribuição sob domínio próprio     |
 
-| Componente     | Ferramenta        | Função                                                         |
-|---------------|-------------------|----------------------------------------------------------------|
-| Recolha       | Google Forms      | Submissão anónima de relatos de avistamentos                   |
-| Base de Dados | Google Sheets     | Armazenamento de dados e filtragem lógica   |
-| Frontend      | Vanilla JS        | Parsing, agrupamento de dados e renderização dinâmica           |
-| Hosting       | GitHub Pages      | Distribuição sob domínio próprio             |
-
-
+---
 
 ## 🤝 Contribuir
 
@@ -30,15 +30,20 @@ Se quiseres ajudar, abre um issue, faz uma fork, manda um PR, ou escreve para in
 - 🎨 UX/UI: Sugestões para melhorar a interface, especialmente a experiência mobile.
 - 📌 Expansão: Ajudar a mapear direções/estações de outras redes.
 
+---
+
 ## 🛠 Roadmap
 
 Ideias em aberto:
 
-- **Versão PWA**: Tornar o site instalável no telemóvel.
-- **Notificações Push**: Sistema experimental de alertas por linha.
-- **Heatmap**: Visualização gráfica de estações com mais fiscalização.
-- **Redes Ferroviárias**: Inclusão da CP e Fertagus.
+- Versão PWA instalável
+- Mitigação de spam
+- Heatmap por estação
+- Alertas por linha
+- Expansão para outras redes (e.g. CP)
+
+---
 
 ## ⚠️ Disclaimer
 
-"Onde anda o pica?" é um projeto experimental independente e sem fins lucrativos, criado para partilha informal de informação entre passageiros, sem qualquer afiliação a operadores de transportes públicos ou privados.
+"Onde anda o pica?" é um projeto experimental, independente e sem fins lucrativos, criado para partilha informal de informação entre passageiros, sem qualquer afiliação a operadores de transportes públicos ou privados.
