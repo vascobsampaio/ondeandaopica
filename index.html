@@ -279,11 +279,10 @@ function timeAgo(ts){
 
 async function fetchReports(){
   const { data, error } = await supabaseClient
-    .from("reports")
-    .select("*")
+    .from("recent_reports")
+    .select("*")            
     .eq("city", currentFilter)
-    .gte("created_at", new Date(Date.now()-86400000).toISOString())
-    .order("created_at",{ascending:false});
+    .order("created_at", {ascending:false});
 
   if(error){
     console.error("Error fetching reports:", error);
