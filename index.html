@@ -212,11 +212,14 @@ function loadDirections(lineName){
 
 document.getElementById("citySelect").addEventListener("change", e => populateLines(e.target.value));
 document.getElementById("lineSelect").addEventListener("change", e => loadDirections(e.target.value));
-
 async function submitReport(){
+
+  const COOLDOWN_MINUTES = 2;
+  const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
+
   const lastReport = localStorage.getItem('last_report_pica');
-  if (lastReport && (Date.now() - parseInt(lastReport)) < 300000) {
-    alert("Calma! Só podes reportar uma vez a cada 5 minutos.");
+  if (lastReport && (Date.now() - parseInt(lastReport)) < COOLDOWN_MS) {
+    alert(`Calma! Só podes reportar uma vez a cada ${COOLDOWN_MINUTES} minutos.`);
     return;
   }
 
