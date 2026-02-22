@@ -50,9 +50,8 @@ h1 { font-size:2.2rem; margin-bottom:6px; letter-spacing:-0.02em; }
 .modal-content select, .modal-content button {
   width:100%;margin-bottom:12px;padding:10px;border-radius:8px;border:1px solid #1e293b;background:#020617;color:#f1f5f9;
 }
+.modal-content button:disabled { opacity: 0.5; cursor: not-allowed; }
 .close-btn { text-align:right;font-size:0.8rem;cursor:pointer;opacity:0.6;margin-bottom:10px;}
-
-/* [FIX 1] Success message shown after submit — hidden by default */
 .success-msg {
   display:none;
   background:rgba(34,197,94,0.12);
@@ -103,14 +102,8 @@ h1 { font-size:2.2rem; margin-bottom:6px; letter-spacing:-0.02em; }
     <div class="close-btn" onclick="closeModal()">Fechar ✕</div>
     <h3>Reportar avistamento</h3>
 
-    <!-- [FIX 1] Success banner, shown briefly after a successful submit -->
     <div id="successMsg" class="success-msg">✓ Avistamento reportado, obrigado!</div>
 
-    <!--
-      [FIX 3] Added `selected` to the city placeholder.
-      Without it, some mobile browsers (especially iOS Safari) ignore
-      the .value assignment in openModal() and show a blank select.
-    -->
     <select id="citySelect">
       <option value="" disabled selected hidden>Cidade</option>
       <option value="Lisboa">Lisboa</option>
@@ -145,6 +138,7 @@ const supabaseClient = window.supabase.createClient(
 
 let cachedReports = [];
 let cachedLines = [];
+let cachedDirections = []; // Added for pre-fetching
 let currentFilter = "Lisboa";
 
 function escapeHTML(str) {
@@ -156,34 +150,33 @@ function escapeHTML(str) {
 
 function openModal(){ 
   document.getElementById("reportModal").style.display="flex";
-
-  // Pre-select the city matching the current feed filter
   document.getElementById("citySelect").value = currentFilter;
-
-  // [FIX 4] Hide the success message in case it was visible from a previous open
   document.getElementById("successMsg").style.display = "none";
-
   populateLines(currentFilter);
 }
 
 function closeModal(){
   document.getElementById("reportModal").style.display="none";
-
-  // [FIX 4] Reset all selects so the modal is clean next time it opens
   document.getElementById("citySelect").value = "";
   document.getElementById("lineSelect").innerHTML = `<option value="" disabled selected hidden>Linha</option>`;
   document.getElementById("directionSelect").innerHTML = `<option value="" disabled selected hidden>Direção</option>`;
   document.getElementById("picasSelect").value = "";
 }
 
-async function loadLines(){
-  const { data, error } = await supabaseClient.from("lines").select("*").order("name");
-  if(error){
-    console.error("Error loading lines:", error);
+// Pre-fetch both lines and directions to avoid network hangs in the tunnel
+async function loadStaticData(){
+  const { data: linesData, error: linesError } = await supabaseClient.from("lines").select("*").order("name");
+  if(linesError) {
+    console.error("Error loading lines:", linesError);
     updateStatus(false);
-    return;
+  } else {
+    cachedLines = linesData || [];
   }
-  cachedLines = data || [];
+
+  const { data: dirData, error: dirError } = await supabaseClient.from("directions").select("*").order("label");
+  if(!dirError) {
+    cachedDirections = dirData || [];
+  }
 }
 
 function populateLines(city){
@@ -202,25 +195,17 @@ function populateLines(city){
     `<option value="" disabled selected hidden>Direção</option>`;
 }
 
-async function loadDirections(lineName){
+// Loads instantly from cache now instead of making a DB call
+function loadDirections(lineName){
   const city = document.getElementById("citySelect").value;
   const line = cachedLines.find(l => l.name === lineName && l.city === city);
   if(!line) return;
 
-  const { data, error } = await supabaseClient
-    .from("directions")
-    .select("*")
-    .eq("line_id", line.id)
-    .order("label");
-
-  if(error){
-    console.error("Error loading directions:", error);
-    return;
-  }
+  const matchedDirs = cachedDirections.filter(d => d.line_id === line.id);
 
   document.getElementById("directionSelect").innerHTML =
     `<option value="" disabled selected hidden>Direção</option>` +
-    (data || []).map(d =>
+    matchedDirs.map(d =>
       `<option value="${escapeHTML(d.label)}">${escapeHTML(d.label)}</option>`
     ).join("");
 }
@@ -229,7 +214,6 @@ document.getElementById("citySelect").addEventListener("change", e => populateLi
 document.getElementById("lineSelect").addEventListener("change", e => loadDirections(e.target.value));
 
 async function submitReport(){
-  // Basic rate limiting via localStorage — one report per 5 minutes per browser
   const lastReport = localStorage.getItem('last_report_pica');
   if (lastReport && (Date.now() - parseInt(lastReport)) < 300000) {
     alert("Calma! Só podes reportar uma vez a cada 5 minutos.");
@@ -246,25 +230,35 @@ async function submitReport(){
     return;
   }
 
+  // Lock button to prevent double taps
+  const submitBtn = document.getElementById("submitBtn");
+  submitBtn.disabled = true;
+  submitBtn.innerText = "A enviar...";
+
   const { error } = await supabaseClient.from("reports").insert([{
     city,
     line,
     direction,
-    // [picas is stored as integer, not the string "3+"]
     picas: picas ? parseInt(picas) : null
   }]);
 
   if(error) {
     alert("Erro ao enviar. Tenta de novo.");
+    submitBtn.disabled = false;
+    submitBtn.innerText = "Enviar";
   } else {
     localStorage.setItem('last_report_pica', Date.now());
-
-    // [FIX 1] Show success message inside the modal for 2 seconds, then close
+    
     const msg = document.getElementById("successMsg");
     msg.style.display = "block";
+    submitBtn.style.display = "none"; // Hide button briefly
+
     setTimeout(() => {
       closeModal();
       fetchReports();
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Enviar";
+      submitBtn.style.display = "block";
     }, 2000);
   }
 }
@@ -298,12 +292,7 @@ async function fetchReports(){
   }
 
   cachedReports = data || [];
-
-  // [FIX 2] Mark as live after a successful fetch, not just after realtime subscribes.
-  // Without this, a failed realtime subscription would leave the dot orange
-  // even if polling is working fine.
   updateStatus(true);
-
   renderReports();
 }
 
@@ -354,17 +343,15 @@ function updateStatus(isLive) {
 }
   
 async function init(){
-  await loadLines();
+  await loadStaticData(); // Swapped to the new combined fetching function
   await fetchReports();
 
-  // Realtime subscription — updates the feed instantly when a new report is inserted
   const channel = supabaseClient.channel('reports-realtime');
   
   channel
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'reports' },
       payload => {
-        // Only add if not already in cache and matches the current city filter
         const exists = cachedReports.some(r => r.id === payload.new.id);
         if(!exists && payload.new.city === currentFilter){
           cachedReports.unshift(payload.new);
@@ -373,18 +360,16 @@ async function init(){
       }
     )
     .subscribe((status) => {
-      // Realtime channel status — only affects the dot if fetch hasn't already set it live
       if (status === 'SUBSCRIBED') updateStatus(true);
       else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') updateStatus(false);
     });
-// inside init(), after the channel.subscribe() block
-// Optimized: Recalculates "time ago" labels without hitting the database
-setInterval(() => {
-  renderReports(); 
-}, 60000);
+
+  // Fixed interval: Now fetches fresh data periodically as a safety net if WebSockets fail
+  setInterval(() => {
+    fetchReports(); 
+  }, 60000);
   
-  // Native browser online/offline events as a fallback signal
-  window.addEventListener('online', () => updateStatus(true));
+  window.addEventListener('online', () => { updateStatus(true); fetchReports(); });
   window.addEventListener('offline', () => updateStatus(false));
 }
 
