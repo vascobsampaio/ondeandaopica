@@ -138,8 +138,9 @@ const supabaseClient = window.supabase.createClient(
 
 let cachedReports = [];
 let cachedLines = [];
-let cachedDirections = []; // Added for pre-fetching
+let cachedDirections = [];
 let currentFilter = "Lisboa";
+let realtimeChannel = null;
 
 function escapeHTML(str) {
   if (!str) return "";
@@ -148,35 +149,56 @@ function escapeHTML(str) {
   }[m]));
 }
 
-function openModal(){ 
-  document.getElementById("reportModal").style.display="flex";
+// IMPROVEMENT 1: openModal retries loadStaticData if cache is empty,
+// and shows a clear error in the dropdown if it still fails.
+async function openModal(){
+  document.getElementById("reportModal").style.display = "flex";
   document.getElementById("citySelect").value = currentFilter;
   document.getElementById("successMsg").style.display = "none";
+
+  if (cachedLines.length === 0) {
+    const ok = await loadStaticData();
+    if (!ok) {
+      document.getElementById("lineSelect").innerHTML =
+        `<option value="" disabled selected>Erro ao carregar. Fecha e tenta de novo.</option>`;
+      return;
+    }
+  }
+
   populateLines(currentFilter);
 }
 
+// IMPROVEMENT 2: closeModal always resets the submit button to a clean state,
+// so no race condition can leave it hidden or disabled on the next open.
 function closeModal(){
-  document.getElementById("reportModal").style.display="none";
+  document.getElementById("reportModal").style.display = "none";
   document.getElementById("citySelect").value = "";
   document.getElementById("lineSelect").innerHTML = `<option value="" disabled selected hidden>Linha</option>`;
   document.getElementById("directionSelect").innerHTML = `<option value="" disabled selected hidden>Direção</option>`;
   document.getElementById("picasSelect").value = "";
+
+  const submitBtn = document.getElementById("submitBtn");
+  submitBtn.disabled = false;
+  submitBtn.innerText = "Enviar";
+  submitBtn.style.display = "block";
 }
 
-// Pre-fetch both lines and directions to avoid network hangs in the tunnel
+// IMPROVEMENT 1: loadStaticData now returns true/false to signal success or failure.
 async function loadStaticData(){
   const { data: linesData, error: linesError } = await supabaseClient.from("lines").select("*").order("name");
-  if(linesError) {
+  if (linesError) {
     console.error("Error loading lines:", linesError);
     updateStatus(false);
-  } else {
-    cachedLines = linesData || [];
+    return false;
   }
+  cachedLines = linesData || [];
 
   const { data: dirData, error: dirError } = await supabaseClient.from("directions").select("*").order("label");
-  if(!dirError) {
+  if (!dirError) {
     cachedDirections = dirData || [];
   }
+
+  return true;
 }
 
 function populateLines(city){
@@ -195,11 +217,10 @@ function populateLines(city){
     `<option value="" disabled selected hidden>Direção</option>`;
 }
 
-// Loads instantly from cache now instead of making a DB call
 function loadDirections(lineName){
   const city = document.getElementById("citySelect").value;
   const line = cachedLines.find(l => l.name === lineName && l.city === city);
-  if(!line) return;
+  if (!line) return;
 
   const matchedDirs = cachedDirections.filter(d => d.line_id === line.id);
 
@@ -212,8 +233,8 @@ function loadDirections(lineName){
 
 document.getElementById("citySelect").addEventListener("change", e => populateLines(e.target.value));
 document.getElementById("lineSelect").addEventListener("change", e => loadDirections(e.target.value));
-async function submitReport(){
 
+async function submitReport(){
   const COOLDOWN_MINUTES = 2;
   const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
 
@@ -228,12 +249,11 @@ async function submitReport(){
   const direction = document.getElementById("directionSelect").value;
   const picas = document.getElementById("picasSelect").value;
 
-  if(!city || !line || !direction){
+  if (!city || !line || !direction) {
     alert("Preenche todos os campos obrigatórios.");
     return;
   }
 
-  // Lock button to prevent double taps
   const submitBtn = document.getElementById("submitBtn");
   submitBtn.disabled = true;
   submitBtn.innerText = "A enviar...";
@@ -245,37 +265,36 @@ async function submitReport(){
     picas: picas ? parseInt(picas) : null
   }]);
 
-  if(error) {
+  if (error) {
     alert("Erro ao enviar. Tenta de novo.");
+    // IMPROVEMENT 2: on error, reset button here (closeModal won't be called)
     submitBtn.disabled = false;
     submitBtn.innerText = "Enviar";
   } else {
     localStorage.setItem('last_report_pica', Date.now());
-    
+
     const msg = document.getElementById("successMsg");
     msg.style.display = "block";
-    submitBtn.style.display = "none"; // Hide button briefly
+    submitBtn.style.display = "none";
 
+    // IMPROVEMENT 2: setTimeout is now simplified — closeModal handles all button reset
     setTimeout(() => {
       closeModal();
       fetchReports();
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Enviar";
-      submitBtn.style.display = "block";
     }, 2000);
   }
 }
 
 function timeAgo(ts){
-  const diffMin = Math.floor((Date.now()-new Date(ts))/60000);
+  const diffMin = Math.floor((Date.now() - new Date(ts)) / 60000);
 
-  if(diffMin < 1) return "agora mesmo";
-  if(diffMin === 1) return "há 1 min";
-  if(diffMin < 60) return `há ${diffMin} min`;
+  if (diffMin < 1) return "agora mesmo";
+  if (diffMin === 1) return "há 1 min";
+  if (diffMin < 60) return `há ${diffMin} min`;
 
-  const diffHours = Math.floor(diffMin/60);
-  if(diffHours === 1) return "há 1h";
-  if(diffHours < 24) return `há ${diffHours}h`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours === 1) return "há 1h";
+  if (diffHours < 24) return `há ${diffHours}h`;
 
   return "há mais de 24h";
 }
@@ -283,11 +302,11 @@ function timeAgo(ts){
 async function fetchReports(){
   const { data, error } = await supabaseClient
     .from("recent_reports")
-    .select("*")            
+    .select("*")
     .eq("city", currentFilter)
-    .order("created_at", {ascending:false});
+    .order("created_at", {ascending: false});
 
-  if(error){
+  if (error) {
     console.error("Error fetching reports:", error);
     updateStatus(false);
     return;
@@ -296,66 +315,52 @@ async function fetchReports(){
   cachedReports = data || [];
   updateStatus(true);
   renderReports();
+
+  document.getElementById("last-update").innerText =
+    "Sincronizado: " +
+    new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'});
 }
 
 function renderReports(){
   const container = document.getElementById("updates-list");
-  const filteredRows = cachedReports;
 
-  if(filteredRows.length === 0){
+  if (cachedReports.length === 0) {
     container.innerHTML = `<div class="empty">Nenhum avistamento nas últimas 24h. Sorte a tua!</div>`;
     return;
   }
 
-  container.innerHTML = filteredRows.map(r => {
+  container.innerHTML = cachedReports.map(r => {
     const lineObj = cachedLines.find(l => l.name === r.line && l.city === r.city);
     const lineColor = lineObj ? lineObj.color : "#334155";
 
     return `
       <div class="card" style="border-left:6px solid ${lineColor}">
         <strong>Linha ${escapeHTML(r.line)} → ${escapeHTML(r.direction)}</strong>
-       ${r.picas ? `<div class="time">${r.picas >= 3 ? "3+" : r.picas} pica${r.picas !== 1 ? "s" : ""}</div>` : ""}
+        ${r.picas ? `<div class="time">${r.picas >= 3 ? "3+" : r.picas} pica${r.picas !== 1 ? "s" : ""}</div>` : ""}
         <div class="time">${timeAgo(r.created_at)}</div>
       </div>
     `;
   }).join("");
-
-  document.getElementById("last-update").innerText =
-    "Sincronizado: " +
-    new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
 }
 
-function setFilter(city){
-  currentFilter = city;
-  document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
-  document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
-  fetchReports();
-}
-
-function updateStatus(isLive) {
-  const dot = document.getElementById("status-dot");
-  const text = document.getElementById("status-text");
-  if(isLive) {
-    dot.className = "indicator-dot live-dot";
-    text.innerText = "Live";
-  } else {
-    dot.className = "indicator-dot stale-dot";
-    text.innerText = "Stale";
+function setupRealtime() {
+  if (realtimeChannel) {
+    supabaseClient.removeChannel(realtimeChannel);
   }
-}
-  
-async function init(){
-  await loadStaticData(); // Swapped to the new combined fetching function
-  await fetchReports();
 
-  const channel = supabaseClient.channel('reports-realtime');
-  
-  channel
+  realtimeChannel = supabaseClient.channel(`reports-${currentFilter}`);
+
+  realtimeChannel
     .on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'reports' },
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'reports',
+        filter: `city=eq.${currentFilter}`
+      },
       payload => {
         const exists = cachedReports.some(r => r.id === payload.new.id);
-        if(!exists && payload.new.city === currentFilter){
+        if (!exists) {
           cachedReports.unshift(payload.new);
           renderReports();
         }
@@ -365,13 +370,51 @@ async function init(){
       if (status === 'SUBSCRIBED') updateStatus(true);
       else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') updateStatus(false);
     });
+}
 
-  // Fixed interval: Now fetches fresh data periodically as a safety net if WebSockets fail
+async function setFilter(city){
+  currentFilter = city;
+  document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
+  document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
+
+  document.getElementById("updates-list").innerHTML = `<div class="empty">A carregar...</div>`;
+
+  await fetchReports();
+  setupRealtime();
+}
+
+function updateStatus(isLive) {
+  const dot = document.getElementById("status-dot");
+  const text = document.getElementById("status-text");
+  if (isLive) {
+    dot.className = "indicator-dot live-dot";
+    text.innerText = "Live";
+  } else {
+    dot.className = "indicator-dot stale-dot";
+    text.innerText = "Stale";
+  }
+}
+
+async function init(){
+  await loadStaticData();
+  await fetchReports();
+  setupRealtime();
+
+  // Safety net: background polling every 5 minutes
   setInterval(() => {
-    fetchReports(); 
+    fetchReports();
+  }, 300000);
+
+  // Local UI tick: updates "há X min" every 60s without network calls
+  setInterval(() => {
+    renderReports();
   }, 60000);
-  
-  window.addEventListener('online', () => { updateStatus(true); fetchReports(); });
+
+  window.addEventListener('online', () => {
+    updateStatus(true);
+    fetchReports();
+    setupRealtime();
+  });
   window.addEventListener('offline', () => updateStatus(false));
 }
 
