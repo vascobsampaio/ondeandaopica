@@ -1079,3 +1079,21 @@ async function init() {
   await loadStaticData();
   await fetchReports();
   setupRealtime
+     setupRealtime();
+
+  // Safety net: re-fetch every 5 minutes in case realtime drops
+  setInterval(() => fetchReports(), 300000);
+
+  // Refresh relative timestamps ("há X min") every 60s without a network call
+  setInterval(() => renderReports(), 60000);
+
+  // Reconnect if the device comes back online
+  window.addEventListener('online',  () => { updateStatus(true); fetchReports(); setupRealtime(); });
+  window.addEventListener('offline', () => updateStatus(false));
+}
+
+init();
+
+</script>
+</body>
+</html>
