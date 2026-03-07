@@ -246,6 +246,10 @@ h1 {
 .card-meta {
   text-align: right;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 .card-picas {
   font-family: var(--font-mono);
@@ -257,7 +261,6 @@ h1 {
   border-radius: 6px;
   padding: 3px 7px;
   display: inline-block;
-  margin-bottom: 5px;
 }
 .card-time {
   font-family: var(--font-mono);
@@ -266,8 +269,31 @@ h1 {
   letter-spacing: 0.02em;
 }
 
+/* ---- Bell button ----
+   Unsubscribed: nearly invisible (0.25 opacity), reveals on hover.
+   Subscribed: fully visible with amber tint via CSS filter.
+   The filter trick shifts the 🔔 emoji toward gold without needing
+   a separate image asset. */
+.bell-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.25;
+  transition: opacity 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  display: block;
+}
+.bell-btn:hover  { opacity: 0.65; }
+.bell-btn:active { transform: scale(0.88); }
+.bell-btn.subscribed {
+  opacity: 1;
+  filter: sepia(1) saturate(5) hue-rotate(5deg);
+}
+
 /* ---- Grouped card ---- */
-/* Thicker left border + inset glow using the line color (set via inline style) */
 .card-group-header {
   border-left-width: 6px;
   cursor: pointer;
@@ -285,7 +311,7 @@ h1 {
 .card-group-children {
   display: none;
   padding-left: 12px;
-  margin-top: -4px;   /* tuck slightly under the header card */
+  margin-top: -4px;
   margin-bottom: 10px;
 }
 .card-group-children.expanded { display: block; }
@@ -293,7 +319,7 @@ h1 {
   margin-bottom: 6px;
   border-left-width: 3px;
   opacity: 0.85;
-  animation: none; /* children don't re-animate on expand */
+  animation: none;
 }
 
 /* ---- Empty state ---- */
@@ -581,10 +607,7 @@ h1 {
   border: none;
   -webkit-tap-highlight-color: transparent;
 }
-.install-btn-primary {
-  background: var(--red);
-  color: #fff;
-}
+.install-btn-primary { background: var(--red); color: #fff; }
 .install-btn-dismiss {
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -756,6 +779,15 @@ const supabaseClient = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWV0aWdhZmFpdXd4b3RlemF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODc5NDEsImV4cCI6MjA4NzI2Mzk0MX0.spjBm2SFPUfbLWxl1hzhL0nssUsW0l73XRgTVS3MuQU"
 );
 
+// Your VAPID public key. Safe to include here — it's the public half of the pair.
+// The browser uses it to cryptographically bind push subscriptions to your server,
+// so only your Edge Function (which holds the private key) can send pushes to them.
+const VAPID_PUBLIC_KEY = "BBYd2csjsDCrmMSeR6oEd6OcVxxBZf6olwAGQfsZznNmic08U2EwsIo1RuqpnfiR6K21QFuOYxJJAbUhaLPsapI";
+
+// Maximum number of simultaneous push subscriptions per device.
+// Enforced client-side — no need for a DB constraint since the UI controls it.
+const MAX_SUBSCRIPTIONS = 4;
+
 
 // ============================================================
 // STATE
@@ -767,6 +799,12 @@ let cachedDirections = [];
 let currentFilter    = "Lisboa";
 let realtimeChannel  = null;
 let installPromptEvt = null;
+
+// In-memory Set of active subscription keys for this device.
+// Key format: "city|line|direction"
+// Persisted to localStorage so bells render correctly across page loads.
+let activeSubscriptions = new Set();
+const SUBS_STORAGE_KEY  = "oapica_subscriptions";
 
 
 // ============================================================
@@ -803,30 +841,63 @@ function updateStatus(isLive) {
   }
 }
 
+// Converts the VAPID public key from base64url to Uint8Array.
+// pushManager.subscribe() requires this exact binary format — a plain string won't work.
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// Canonical local key for a subscription. Pipe-delimited because
+// city/line/direction values won't contain pipes.
+function subKey(city, line, direction) {
+  return `${city}|${line}|${direction}`;
+}
+
+
+// ============================================================
+// SUBSCRIPTION PERSISTENCE
+// Subscription keys are stored in localStorage as a JSON array.
+// This is purely for UI state (which bells are lit) — the actual
+// push delivery authority lives in the Supabase subscriptions table.
+// ============================================================
+
+function loadSubscriptionsFromStorage() {
+  try {
+    const stored = localStorage.getItem(SUBS_STORAGE_KEY);
+    if (stored) activeSubscriptions = new Set(JSON.parse(stored));
+  } catch (e) {
+    activeSubscriptions = new Set(); // corrupt storage — start fresh
+  }
+}
+
+function saveSubscriptionsToStorage() {
+  localStorage.setItem(SUBS_STORAGE_KEY, JSON.stringify([...activeSubscriptions]));
+}
+
 
 // ============================================================
 // GROUPING ALGORITHM
-// Groups reports by city + line + direction using a sliding 30-minute window:
-// a report joins a group if it is within 30 minutes of ANY report already in that group.
-// Groups of 3+ render as a collapsible group card. Groups of 1-2 render as normal individual cards.
+// Groups reports by city + line + direction using a sliding 30-minute window.
+// A report joins a group if it is within 30 min of ANY report already in that group.
+// Groups of 3+ render as a collapsible group card. Groups of 1-2 render individually.
 // ============================================================
 
 function groupReports(reports) {
-  const WINDOW_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+  const WINDOW_MS = 30 * 60 * 1000;
   const groups = [];
 
   for (const report of reports) {
     const ts = new Date(report.created_at).getTime();
 
-    // Try to find an existing group this report can join
     let joined = false;
     for (const group of groups) {
-      // Must match city + line + direction
       if (group.city !== report.city) continue;
       if (group.line !== report.line) continue;
       if (group.direction !== report.direction) continue;
 
-      // Check if within 30 min of any report already in this group
       const withinWindow = group.reports.some(r => {
         const diff = Math.abs(ts - new Date(r.created_at).getTime());
         return diff <= WINDOW_MS;
@@ -839,7 +910,6 @@ function groupReports(reports) {
       }
     }
 
-    // No matching group found — start a new one
     if (!joined) {
       groups.push({
         city:      report.city,
@@ -858,8 +928,27 @@ function groupReports(reports) {
 // CARD RENDERING HELPERS
 // ============================================================
 
-// Renders a single report as a normal card HTML string.
-function renderSingleCard(r, i, animationDelay) {
+// Builds the bell button HTML. Values go through data-* attributes to avoid
+// any escaping issues with special characters in line/direction names.
+function renderBellBtn(city, line, direction) {
+  const key        = subKey(city, line, direction);
+  const subscribed = activeSubscriptions.has(key);
+  const cls        = subscribed ? "bell-btn subscribed" : "bell-btn";
+  const title      = subscribed ? "Cancelar alerta" : "Receber alerta para esta direção";
+  return `<button
+    class="${cls}"
+    title="${title}"
+    data-city="${escapeHTML(city)}"
+    data-line="${escapeHTML(line)}"
+    data-direction="${escapeHTML(direction)}"
+    onclick="handleBellClick(event)"
+  >🔔</button>`;
+}
+
+// Renders a single report card.
+// showBell controls whether the bell appears — used to suppress it on
+// the older card when a group of exactly 2 renders as individual cards.
+function renderSingleCard(r, animationDelay, showBell = true) {
   const lineObj   = cachedLines.find(l => l.name === r.line && l.city === r.city);
   const lineColor = lineObj ? lineObj.color : "#3f3f46";
 
@@ -876,21 +965,20 @@ function renderSingleCard(r, i, animationDelay) {
       <div class="card-meta">
         ${picasLabel}
         <div class="card-time">${timeAgo(r.created_at)}</div>
+        ${showBell ? renderBellBtn(r.city, r.line, r.direction) : ""}
       </div>
     </div>`;
 }
 
 // Renders a group of 3+ reports as a collapsible group card.
-// The header card shows the most recent report's time and the badge.
-// Child cards are hidden until the user taps the header.
+// The bell on the header subscribes to the whole group's direction.
+// stopPropagation in handleBellClick prevents the tap from also toggling the group.
+// Child cards inside the expanded list never show bells — the header bell covers them.
 function renderGroupCard(group, groupIndex, animationDelay) {
   const lineObj   = cachedLines.find(l => l.name === group.line && l.city === group.city);
   const lineColor = lineObj ? lineObj.color : "#3f3f46";
-
-  // Inset glow uses the line's own color for a subtle bloom effect
   const glowStyle = `border-left-color:${lineColor}; box-shadow: inset 4px 0 12px -3px ${lineColor}40;`;
 
-  // Most recent report is first (feed is sorted descending)
   const newest = group.reports[0];
   const count  = group.reports.length;
 
@@ -898,9 +986,9 @@ function renderGroupCard(group, groupIndex, animationDelay) {
     ? `<div class="card-picas">${newest.picas >= 3 ? "3+" : newest.picas} pica${newest.picas !== 1 ? "s" : ""}</div>`
     : "";
 
-  // Build child cards (no animation, slightly inset)
+  // Child cards never show bells (showBell = false) — the group header covers it
   const childCards = group.reports
-    .map(r => renderSingleCard(r, 0, 0))
+    .map(r => renderSingleCard(r, 0, false))
     .join("");
 
   const childrenId = `group-children-${groupIndex}`;
@@ -917,6 +1005,7 @@ function renderGroupCard(group, groupIndex, animationDelay) {
       <div class="card-meta">
         ${picasLabel}
         <div class="card-time">${timeAgo(newest.created_at)}</div>
+        ${renderBellBtn(group.city, group.line, group.direction)}
       </div>
     </div>
     <div id="${childrenId}" class="card-group-children">
@@ -924,10 +1013,129 @@ function renderGroupCard(group, groupIndex, animationDelay) {
     </div>`;
 }
 
-// Toggles a group's children open/closed.
 function toggleGroup(childrenId) {
   const el = document.getElementById(childrenId);
   if (el) el.classList.toggle("expanded");
+}
+
+
+// ============================================================
+// BELL / SUBSCRIPTION LOGIC
+// ============================================================
+
+function handleBellClick(event) {
+  event.stopPropagation(); // prevent group card toggle from firing
+  const btn = event.currentTarget;
+  toggleSubscription(btn.dataset.city, btn.dataset.line, btn.dataset.direction);
+}
+
+async function toggleSubscription(city, line, direction) {
+  const key = subKey(city, line, direction);
+
+  if (activeSubscriptions.has(key)) {
+    // Unsubscribing — delete the specific row from Supabase.
+    // With the composite unique constraint, we need to match on all four
+    // columns to target exactly this device + direction combination.
+    const pushSub = await getPushSubscription();
+    if (pushSub) {
+      const endpoint = pushSub.endpoint;
+      await supabaseClient
+        .from("subscriptions")
+        .delete()
+        .eq("endpoint", endpoint)
+        .eq("city", city)
+        .eq("line", line)
+        .eq("direction", direction);
+      // We don't block on errors here — if the delete fails the row is
+      // harmless (the Edge Function would notify but the SW would receive
+      // a push for a direction the user no longer cares about, which is
+      // a minor nuisance at worst). Local state is what the user sees.
+    }
+
+    activeSubscriptions.delete(key);
+    saveSubscriptionsToStorage();
+    renderReports();
+    return;
+  }
+
+  // Enforce the 4-subscription cap before doing anything async
+  if (activeSubscriptions.size >= MAX_SUBSCRIPTIONS) {
+    alert(`Já tens ${MAX_SUBSCRIPTIONS} alertas ativos. Cancela um antes de adicionar outro.`);
+    return;
+  }
+
+  // Check browser support
+  if (!('Notification' in window) || !('PushManager' in window)) {
+    alert("O teu browser não suporta notificações push. Tenta no Chrome ou Firefox.");
+    return;
+  }
+
+  // Handle permission — denied means the user has to go to browser settings,
+  // default means we show the native prompt, granted means proceed silently
+  let permission = Notification.permission;
+  if (permission === 'denied') {
+    alert("Bloqueaste as notificações para este site. Para ativar, vai às definições do browser e permite notificações para ondeandaopica.pt.");
+    return;
+  }
+  if (permission === 'default') {
+    permission = await Notification.requestPermission();
+  }
+  if (permission !== 'granted') return; // user dismissed the prompt — fail silently
+
+  const registration = await navigator.serviceWorker.ready;
+
+  let pushSubscription;
+  try {
+    // The browser returns the existing push subscription if one already exists
+    // for this origin + VAPID key pair, so this is safe to call every time
+    pushSubscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+  } catch (err) {
+    console.error("Push subscription failed:", err);
+    alert("Não foi possível ativar as notificações. Tenta outra vez.");
+    return;
+  }
+
+  const subJson  = pushSubscription.toJSON();
+  const endpoint = subJson.endpoint;
+  const p256dh   = subJson.keys.p256dh;
+  const auth     = subJson.keys.auth;
+
+  // Insert a new row for this device + direction.
+  // The composite unique constraint (endpoint, city, line, direction) means
+  // if this exact combination already exists, upsert updates p256dh/auth in
+  // case the browser rotated the keys — otherwise it inserts a fresh row.
+  // This is what allows one device to hold up to MAX_SUBSCRIPTIONS rows.
+  const { error } = await supabaseClient
+    .from("subscriptions")
+    .upsert(
+      { endpoint, p256dh, auth, city, line, direction },
+      { onConflict: "endpoint, city, line, direction" }
+    );
+
+  if (error) {
+    console.error("Failed to save subscription:", error);
+    alert("Não foi possível guardar o alerta. Tenta outra vez.");
+    return;
+  }
+
+  activeSubscriptions.add(key);
+  saveSubscriptionsToStorage();
+  renderReports();
+}
+
+// Helper that returns the current push subscription if one exists,
+// or null if the browser hasn't subscribed yet. Used when unsubscribing
+// to get the endpoint without re-triggering the permission flow.
+async function getPushSubscription() {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    return await registration.pushManager.getSubscription();
+  } catch (e) {
+    return null;
+  }
 }
 
 
@@ -953,9 +1161,7 @@ async function loadStaticData() {
     .select("*")
     .order("label");
 
-  if (!dirError) {
-    cachedDirections = dirData || [];
-  }
+  if (!dirError) cachedDirections = dirData || [];
 
   return true;
 }
@@ -1145,11 +1351,8 @@ function renderReports() {
     return;
   }
 
-  if (cachedLines.length === 0) {
-    loadStaticData();
-  }
+  if (cachedLines.length === 0) loadStaticData();
 
-  // Group reports using the sliding 30-min window algorithm
   const groups = groupReports(cachedReports);
 
   let cardIndex = 0;
@@ -1158,14 +1361,17 @@ function renderReports() {
     cardIndex++;
 
     if (group.reports.length >= 3) {
-      // Render as a collapsible group card
+      // Group card — bell on header, no bells on children
       return renderGroupCard(group, groupIndex, delay);
     } else {
-      // Render each report as an individual card
-      return group.reports.map(r => {
+      // 1 or 2 individual cards — bell only on the first (most recent) one.
+      // For a group of 1 that's always the only card.
+      // For a group of 2 the second card is an older duplicate sighting
+      // for the same direction — one bell is enough.
+      return group.reports.map((r, i) => {
         const d = cardIndex * 40;
         cardIndex++;
-        return renderSingleCard(r, cardIndex, d);
+        return renderSingleCard(r, d, i === 0); // showBell only for index 0
       }).join("");
     }
   }).join("");
@@ -1273,6 +1479,9 @@ window.addEventListener('appinstalled', () => {
 // ============================================================
 
 async function init() {
+  // Load subscription keys before first render so bells are correct immediately
+  loadSubscriptionsFromStorage();
+
   await loadStaticData();
   await fetchReports();
   setupRealtime();
