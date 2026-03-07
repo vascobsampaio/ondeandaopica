@@ -22,7 +22,7 @@
   }
 </script>
 
-<!-- Open Graph tags for link previews (WhatsApp, Twitter, etc.) -->
+<!-- Open Graph tags for link previews -->
 <meta name="theme-color" content="#09090b">
 <meta property="og:title" content="Onde anda o pica?">
 <meta property="og:description" content="O passe pesa na carteira — a multa ainda mais.">
@@ -602,7 +602,7 @@ h1 {
   <div class="status-bar">
     <div class="status-left">
       <span id="status-dot" class="indicator-dot stale-dot"></span>
-      <span id="status-text">A conectar...</span>
+      <span id="status-text">À espreita...</span>
     </div>
     <div id="last-update"></div>
   </div>
@@ -622,17 +622,17 @@ h1 {
     <div class="modal-handle"></div>
 
     <div class="modal-header">
-      <h3 class="modal-title">Reportar avistamento</h3>
+      <h3 class="modal-title">Pica avistado</h3>
       <div class="close-btn" onclick="closeModal()">Fechar ✕</div>
     </div>
 
     <!-- Shown after a successful insert, then modal auto-closes -->
-    <div id="successMsg" class="success-msg">✓ Avistamento reportado, obrigado!</div>
+    <div id="successMsg" class="success-msg">✓ Avistamento reportado! A malta agradece.</div>
 
     <div class="field">
       <label for="citySelect">Cidade</label>
       <select id="citySelect">
-        <option value="" disabled selected hidden>Seleciona a cidade</option>
+        <option value="" disabled selected hidden>Onde estás?</option>
         <option value="Lisboa">Lisboa</option>
         <option value="Porto">Porto</option>
       </select>
@@ -642,7 +642,7 @@ h1 {
     <div class="field">
       <label for="lineSelect">Linha</label>
       <select id="lineSelect" disabled>
-        <option value="" disabled selected hidden>Seleciona a linha</option>
+        <option value="" disabled selected hidden>Qual é a linha?</option>
       </select>
     </div>
 
@@ -650,14 +650,14 @@ h1 {
     <div class="field">
       <label for="directionSelect">Direção</label>
       <select id="directionSelect" disabled>
-        <option value="" disabled selected hidden>Seleciona a direção</option>
+        <option value="" disabled selected hidden>Em que direção?</option>
       </select>
     </div>
 
     <div class="field">
       <label for="picasSelect">Nº de picas <span style="opacity:0.5;font-size:0.9em"></span></label>
       <select id="picasSelect">
-        <option value="" disabled selected hidden>Quantos?</option>
+        <option value="" disabled selected hidden>Quantos viste?</option>
         <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3+</option>
@@ -671,7 +671,7 @@ h1 {
 
 <!-- ============================================================
      ABOUT PANEL
-     Slides up over the page. Edit the description and links below.
+     Slides up over the page.
      ============================================================ -->
 <div id="aboutPanel" class="about-panel">
   <div class="about-panel-content">
@@ -683,9 +683,9 @@ h1 {
     </div>
 
     <p class="about-description">
-      Andar de transportes públicos tem as suas surpresas. Este site existe para
-      que estejas um bocadinho mais informado.<br><br>
-      É um projeto experimental feito por passageiros, para passageiros.<br>
+      Andar de transportes públicos tem as suas surpresas. <br><br>
+      Este site existe para que estejas um bocadinho mais informado.
+      É um projeto experimental feito por passageiros, para passageiros.<br><br>
       Reporta anonimamente e partilha com quem conheces.
     </p>
 
@@ -716,8 +716,8 @@ h1 {
      ============================================================ -->
 <div id="installBanner" class="install-banner">
   <div class="install-banner-text">
-    <div class="install-banner-title">Instalar app</div>
-    <div class="install-banner-sub">Acesso rápido, funciona offline</div>
+    <div class="install-banner-title">Instalar a app</div>
+    <div class="install-banner-sub">Acesso direto, sem abrir o browser</div>
   </div>
   <div class="install-banner-actions">
     <button class="install-btn install-btn-dismiss" onclick="dismissInstall()">Agora não</button>
@@ -737,8 +737,7 @@ h1 {
 
 // ============================================================
 // CONFIG & SUPABASE CLIENT
-// The anon key is intentionally public — security is enforced
-// by Row Level Security (RLS) and the insert trigger on the DB.
+// The anon key is intentionally public — security is enforced by Row Level Security (RLS) and the insert trigger on the DB.
 // ============================================================
 
 const supabaseClient = window.supabase.createClient(
@@ -798,10 +797,10 @@ function updateStatus(isLive) {
   const text = document.getElementById("status-text");
   if (isLive) {
     dot.className = "indicator-dot live-dot";
-    text.innerText = "Live";
+    text.innerText = "Conectado";
   } else {
     dot.className = "indicator-dot stale-dot";
-    text.innerText = "Stale";
+    text.innerText = "Desatualizado";
   }
 }
 
@@ -854,7 +853,7 @@ async function openModal() {
     const ok = await loadStaticData();
     if (!ok) {
       document.getElementById("lineSelect").innerHTML =
-        `<option value="" disabled selected>Erro ao carregar. Fecha e tenta de novo.</option>`;
+        `<option value="" disabled selected>Não era suposto acontecer isto. Fecha e tenta outra vez.</option>`;
       return;
     }
   }
@@ -869,11 +868,11 @@ function closeModal() {
   document.getElementById("citySelect").value = "";
 
   const lineSelect = document.getElementById("lineSelect");
-  lineSelect.innerHTML = `<option value="" disabled selected hidden>Seleciona a linha</option>`;
+  lineSelect.innerHTML = `<option value="" disabled selected hidden>Qual é a linha?</option>`;
   lineSelect.disabled = true;
 
   const directionSelect = document.getElementById("directionSelect");
-  directionSelect.innerHTML = `<option value="" disabled selected hidden>Seleciona a direção</option>`;
+  directionSelect.innerHTML = `<option value="" disabled selected hidden>Em que direção?</option>`;
   directionSelect.disabled = true;
 
   document.getElementById("picasSelect").value = "";
@@ -893,14 +892,14 @@ function populateLines(city) {
   lineSelect.disabled = false;
 
   lineSelect.innerHTML =
-    `<option value="" disabled selected hidden>Seleciona a linha</option>` +
+    `<option value="" disabled selected hidden>Qual é a linha?</option>` +
     cachedLines
       .filter(l => l.city === city)
       .map(l => `<option value="${escapeHTML(l.name)}">${escapeHTML(l.name)}</option>`)
       .join("");
 
   const directionSelect = document.getElementById("directionSelect");
-  directionSelect.innerHTML = `<option value="" disabled selected hidden>Seleciona a direção</option>`;
+  directionSelect.innerHTML = `<option value="" disabled selected hidden>Em que direção?</option>`;
   directionSelect.disabled = true;
 }
 
@@ -916,7 +915,7 @@ function loadDirections(lineName) {
   const directionSelect = document.getElementById("directionSelect");
   directionSelect.disabled = false;
   directionSelect.innerHTML =
-    `<option value="" disabled selected hidden>Seleciona a direção</option>` +
+    `<option value="" disabled selected hidden>Em que direção?</option>` +
     matchedDirs
       .map(d => `<option value="${escapeHTML(d.label)}">${escapeHTML(d.label)}</option>`)
       .join("");
@@ -934,9 +933,7 @@ document.getElementById("reportModal").addEventListener("click", e => {
 
 // ============================================================
 // SUBMIT REPORT
-// Client-side cooldown (2 min) is a UX soft-limit only —
-// it can be bypassed via private browsing. Real validation
-// lives in the DB (RLS policy + insert trigger).
+// Client-side cooldown (2 min) is a UX soft-limit only. Real validation lives in the DB (RLS policy + insert trigger).
 // ============================================================
 
 async function submitReport() {
@@ -948,7 +945,7 @@ async function submitReport() {
     const elapsed = Date.now() - parseInt(lastReport);
     if (elapsed < COOLDOWN_MS) {
       const secondsLeft = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
-      alert(`Calma! Aguarda mais ${secondsLeft}s antes de reportar novamente.`);
+      alert(`Calma aí! Espera ${secondsLeft}s antes de reportar novamente.`);
       return;
     }
   }
@@ -959,7 +956,7 @@ async function submitReport() {
   const picas     = document.getElementById("picasSelect").value;
 
   if (!city || !line || !direction) {
-    alert("Preenche todos os campos obrigatórios.");
+    alert("Calma aí! Preenche todos os campos primeiro.");
     return;
   }
 
@@ -976,7 +973,7 @@ async function submitReport() {
   }]);
 
   if (error) {
-    alert("Erro ao enviar. Tenta de novo.");
+    alert("Algo correu mal. Tenta outra vez.");
     // Reset button here — closeModal() won't be called on error
     submitBtn.disabled  = false;
     submitBtn.innerText = "Enviar avistamento";
@@ -1021,19 +1018,28 @@ async function fetchReports() {
 
   document.getElementById("last-update").innerText =
     new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+  document.title = cachedReports.length > 0
+    ? `(${cachedReports.length} pica${cachedReports.length !== 1 ? "s" : ""}) Onde anda o pica?`
+    : "Onde anda o pica?";
 }
 
 // Renders cachedReports into the feed.
-// If cachedLines is empty (static data failed), fires a background reload
-// so colors appear on the next render cycle without blocking the feed.
+// If cachedLines is empty (static data failed), fires a background reload so colors appear on the next render cycle without blocking the feed.
 function renderReports() {
   const container = document.getElementById("updates-list");
 
   if (cachedReports.length === 0) {
+    const emptyMessages = [
+      "Nenhum avistamento nas últimas 24h. Sorte a tua!",
+      "Tudo calmo por aqui. Por enquanto...",
+      "Nem sinal deles. Aproveita!"
+    ];
+    const emptyMsg = emptyMessages[Math.floor(Math.random() * emptyMessages.length)];
     container.innerHTML = `
       <div class="empty">
         <span class="empty-icon">🟢</span>
-        Nenhum avistamento nas últimas 24h.<br>Tá tudo calmo por aí.
+        ${emptyMsg}
       </div>`;
     return;
   }
@@ -1067,9 +1073,8 @@ function renderReports() {
   }).join("");
 }
 
-// Sets up a Supabase realtime subscription for INSERT events
-// on the active city. Tears down the previous channel first
-// so switching cities doesn't leave stale subscriptions open.
+// Sets up a Supabase realtime subscription for INSERT events on the active city.
+// Tears down the previous channel first so switching cities doesn't leave stale subscriptions open.
 function setupRealtime() {
   if (realtimeChannel) {
     supabaseClient.removeChannel(realtimeChannel);
@@ -1115,7 +1120,7 @@ async function setFilter(city) {
   document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
 
   // Show loading state while fetch is in flight
-  document.getElementById("updates-list").innerHTML = `<div class="empty">A carregar...</div>`;
+  document.getElementById("updates-list").innerHTML = `<div class="empty">Já, já...</div>`;
 
   await fetchReports();
   setupRealtime();
@@ -1126,9 +1131,8 @@ async function setFilter(city) {
 // ABOUT PANEL
 // ============================================================
 
-// Build the email link entirely in JS — no email address in the HTML
-// at all, because Cloudflare scans for @ symbols and injects a script
-// that breaks page load order even when there's no mailto: href.
+// Build the email link entirely in JS — no email address in the HTML at all, because Cloudflare scans for @ symbols
+// and injects a script that breaks page load order even when there's no mailto: href.
 const email = ["info", "ondeandaopica.pt"].join("@");
 document.getElementById("emailLink").href = "mailto:" + email;
 document.getElementById("emailDisplay").innerText = email;
@@ -1149,9 +1153,8 @@ document.getElementById("aboutPanel").addEventListener("click", e => {
 
 // ============================================================
 // PWA INSTALL BANNER
-// The browser fires beforeinstallprompt when it decides the user
-// is eligible to install. We suppress the default mini-infobar,
-// stash the event, and show our own banner instead.
+// The browser fires beforeinstallprompt when it decides the user is eligible to install.
+// We suppress the default mini-infobar, stash the event, and show our own banner instead.
 // Only fires on Chrome/Edge/Android — not on iOS Safari.
 // ============================================================
 
@@ -1192,8 +1195,7 @@ window.addEventListener('appinstalled', () => {
 
 // ============================================================
 // INIT
-// Runs once on page load. Loads static data, fetches the feed,
-// sets up realtime, and registers background intervals.
+// Runs once on page load. Loads static data, fetches the feed, sets up realtime, and registers background intervals.
 // ============================================================
 
 async function init() {
