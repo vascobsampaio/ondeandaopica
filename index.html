@@ -266,6 +266,36 @@ h1 {
   letter-spacing: 0.02em;
 }
 
+/* ---- Grouped card ---- */
+/* Thicker left border + inset glow using the line color (set via inline style) */
+.card-group-header {
+  border-left-width: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-group-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 5px;
+  letter-spacing: 0.02em;
+}
+
+/* Individual cards nested inside an expanded group */
+.card-group-children {
+  display: none;
+  padding-left: 12px;
+  margin-top: -4px;   /* tuck slightly under the header card */
+  margin-bottom: 10px;
+}
+.card-group-children.expanded { display: block; }
+.card-group-children .card {
+  margin-bottom: 6px;
+  border-left-width: 3px;
+  opacity: 0.85;
+  animation: none; /* children don't re-animate on expand */
+}
+
 /* ---- Empty state ---- */
 .empty {
   text-align: center;
@@ -289,7 +319,6 @@ h1 {
   z-index: 100;
   backdrop-filter: blur(4px);
 }
-/* On mobile: sheet slides up from the bottom */
 .modal-content {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -299,7 +328,6 @@ h1 {
   width: 100%;
   text-align: left;
 }
-/* On larger screens: centered dialog */
 @media (min-width: 600px) {
   .modal { align-items: center; justify-content: center; }
   .modal-content {
@@ -506,8 +534,6 @@ h1 {
 }
 
 /* ---- PWA install banner ---- */
-/* Hidden by default. Shown by JS when beforeinstallprompt fires. */
-/* Slides up from below the viewport so it doesn't layout-shift the page. */
 .install-banner {
   display: none;
   position: fixed;
@@ -515,7 +541,7 @@ h1 {
   left: 0;
   right: 0;
   z-index: 200;
-  padding: 12px 16px 28px; /* extra bottom padding for home indicator */
+  padding: 12px 16px 28px;
   background: var(--surface);
   border-top: 1px solid var(--border);
   align-items: center;
@@ -584,7 +610,6 @@ h1 {
     <p class="subtitle">O passe pesa na carteira — a multa ainda mais.</p>
   </header>
 
-  <!-- CTA: triggers the report modal -->
   <div class="cta-wrapper">
     <button class="cta-button" onclick="openModal()">
       <span class="cta-icon">👀</span>
@@ -592,13 +617,11 @@ h1 {
     </button>
   </div>
 
-  <!-- City filter: Lisboa is active by default -->
   <div class="filters">
     <button id="btn-lisboa" class="active" onclick="setFilter('Lisboa')">Lisboa</button>
     <button id="btn-porto" onclick="setFilter('Porto')">Porto</button>
   </div>
 
-  <!-- Live/stale indicator + last sync timestamp -->
   <div class="status-bar">
     <div class="status-left">
       <span id="status-dot" class="indicator-dot stale-dot"></span>
@@ -607,15 +630,12 @@ h1 {
     <div id="last-update"></div>
   </div>
 
-  <!-- Feed: sighting cards are injected here by renderReports() -->
   <div id="updates-list"></div>
 </div>
 
 
 <!-- ============================================================
      MODAL: report form
-     City → Line → Direction → Nº picas
-     Lines and directions are populated dynamically from the DB.
      ============================================================ -->
 <div id="reportModal" class="modal">
   <div class="modal-content">
@@ -626,7 +646,6 @@ h1 {
       <div class="close-btn" onclick="closeModal()">Fechar ✕</div>
     </div>
 
-    <!-- Shown after a successful insert, then modal auto-closes -->
     <div id="successMsg" class="success-msg">✓ Avistamento reportado! A malta agradece.</div>
 
     <div class="field">
@@ -638,7 +657,6 @@ h1 {
       </select>
     </div>
 
-    <!-- Populated by populateLines() when city changes -->
     <div class="field">
       <label for="lineSelect">Linha</label>
       <select id="lineSelect" disabled>
@@ -646,7 +664,6 @@ h1 {
       </select>
     </div>
 
-    <!-- Populated by loadDirections() when line changes -->
     <div class="field">
       <label for="directionSelect">Direção</label>
       <select id="directionSelect" disabled>
@@ -671,7 +688,6 @@ h1 {
 
 <!-- ============================================================
      ABOUT PANEL
-     Slides up over the page.
      ============================================================ -->
 <div id="aboutPanel" class="about-panel">
   <div class="about-panel-content">
@@ -683,8 +699,8 @@ h1 {
     </div>
 
     <p class="about-description">
-      Andar de transportes públicos tem as suas surpresas. <br><br>
-      Este site existe para que estejas um bocadinho mais informado.
+      Andar de transportes públicos tem as suas surpresas. Este site existe para
+      que estejas um bocadinho mais informado.<br><br>
       É um projeto experimental feito por passageiros, para passageiros.<br><br>
       Reporta anonimamente e partilha com quem conheces.
     </p>
@@ -711,8 +727,6 @@ h1 {
 
 <!-- ============================================================
      PWA INSTALL BANNER
-     Shown when browser fires beforeinstallprompt (Chrome/Android).
-     Hidden on iOS — those users need Share → Add to Home Screen.
      ============================================================ -->
 <div id="installBanner" class="install-banner">
   <div class="install-banner-text">
@@ -729,15 +743,12 @@ h1 {
 <!-- ============================================================
      JAVASCRIPT
      ============================================================ -->
-
-<!-- Supabase JS client (loaded from CDN, no build step needed) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 
 // ============================================================
 // CONFIG & SUPABASE CLIENT
-// The anon key is intentionally public — security is enforced by Row Level Security (RLS) and the insert trigger on the DB.
 // ============================================================
 
 const supabaseClient = window.supabase.createClient(
@@ -748,26 +759,20 @@ const supabaseClient = window.supabase.createClient(
 
 // ============================================================
 // STATE
-// These variables are shared across functions.
-// cachedLines/Directions are loaded once on init and reused.
-// cachedReports is refreshed on filter change and realtime push.
-// realtimeChannel is stored so it can be torn down on filter change.
 // ============================================================
 
 let cachedReports    = [];
 let cachedLines      = [];
 let cachedDirections = [];
-let currentFilter    = "Lisboa"; // Active city filter (Lisboa | Porto)
-let realtimeChannel  = null;     // Holds the active Supabase realtime subscription
-let installPromptEvt = null;     // Stashed beforeinstallprompt event, used by triggerInstall()
+let currentFilter    = "Lisboa";
+let realtimeChannel  = null;
+let installPromptEvt = null;
 
 
 // ============================================================
 // UTILITIES
 // ============================================================
 
-// Escapes user-generated strings before injecting into innerHTML.
-// Prevents XSS even though all data comes from our own DB.
 function escapeHTML(str) {
   if (!str) return "";
   return str.toString().replace(/[&<>"']/g, m => ({
@@ -775,23 +780,17 @@ function escapeHTML(str) {
   }[m]));
 }
 
-// Converts a UTC timestamp into a Portuguese relative time string.
-// Called client-side so no extra DB query is needed.
 function timeAgo(ts) {
   const diffMin = Math.floor((Date.now() - new Date(ts)) / 60000);
-
   if (diffMin < 1)   return "agora mesmo";
   if (diffMin === 1) return "há 1 min";
   if (diffMin < 60)  return `há ${diffMin} min`;
-
   const diffHours = Math.floor(diffMin / 60);
   if (diffHours === 1)  return "há 1h";
   if (diffHours < 24)  return `há ${diffHours}h`;
-
   return "há mais de 24h";
 }
 
-// Updates the live/stale dot and label in the status bar.
 function updateStatus(isLive) {
   const dot  = document.getElementById("status-dot");
   const text = document.getElementById("status-text");
@@ -806,9 +805,134 @@ function updateStatus(isLive) {
 
 
 // ============================================================
-// STATIC DATA (lines + directions)
-// Loaded once on init. Both are small tables that rarely change.
-// Returns true/false so callers can react to failure.
+// GROUPING ALGORITHM
+// Groups reports by city + line + direction using a sliding 30-minute window:
+// a report joins a group if it is within 30 minutes of ANY report already in that group.
+// Groups of 3+ render as a collapsible group card. Groups of 1-2 render as normal individual cards.
+// ============================================================
+
+function groupReports(reports) {
+  const WINDOW_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+  const groups = [];
+
+  for (const report of reports) {
+    const ts = new Date(report.created_at).getTime();
+
+    // Try to find an existing group this report can join
+    let joined = false;
+    for (const group of groups) {
+      // Must match city + line + direction
+      if (group.city !== report.city) continue;
+      if (group.line !== report.line) continue;
+      if (group.direction !== report.direction) continue;
+
+      // Check if within 30 min of any report already in this group
+      const withinWindow = group.reports.some(r => {
+        const diff = Math.abs(ts - new Date(r.created_at).getTime());
+        return diff <= WINDOW_MS;
+      });
+
+      if (withinWindow) {
+        group.reports.push(report);
+        joined = true;
+        break;
+      }
+    }
+
+    // No matching group found — start a new one
+    if (!joined) {
+      groups.push({
+        city:      report.city,
+        line:      report.line,
+        direction: report.direction,
+        reports:   [report]
+      });
+    }
+  }
+
+  return groups;
+}
+
+
+// ============================================================
+// CARD RENDERING HELPERS
+// ============================================================
+
+// Renders a single report as a normal card HTML string.
+function renderSingleCard(r, i, animationDelay) {
+  const lineObj   = cachedLines.find(l => l.name === r.line && l.city === r.city);
+  const lineColor = lineObj ? lineObj.color : "#3f3f46";
+
+  const picasLabel = r.picas
+    ? `<div class="card-picas">${r.picas >= 3 ? "3+" : r.picas} pica${r.picas !== 1 ? "s" : ""}</div>`
+    : "";
+
+  return `
+    <div class="card" style="animation-delay:${animationDelay}ms; border-left-color:${lineColor}">
+      <div class="card-body">
+        <div class="card-line">Linha ${escapeHTML(r.line)}</div>
+        <div class="card-direction">→ ${escapeHTML(r.direction)}</div>
+      </div>
+      <div class="card-meta">
+        ${picasLabel}
+        <div class="card-time">${timeAgo(r.created_at)}</div>
+      </div>
+    </div>`;
+}
+
+// Renders a group of 3+ reports as a collapsible group card.
+// The header card shows the most recent report's time and the badge.
+// Child cards are hidden until the user taps the header.
+function renderGroupCard(group, groupIndex, animationDelay) {
+  const lineObj   = cachedLines.find(l => l.name === group.line && l.city === group.city);
+  const lineColor = lineObj ? lineObj.color : "#3f3f46";
+
+  // Inset glow uses the line's own color for a subtle bloom effect
+  const glowStyle = `border-left-color:${lineColor}; box-shadow: inset 4px 0 12px -3px ${lineColor}40;`;
+
+  // Most recent report is first (feed is sorted descending)
+  const newest = group.reports[0];
+  const count  = group.reports.length;
+
+  const picasLabel = newest.picas
+    ? `<div class="card-picas">${newest.picas >= 3 ? "3+" : newest.picas} pica${newest.picas !== 1 ? "s" : ""}</div>`
+    : "";
+
+  // Build child cards (no animation, slightly inset)
+  const childCards = group.reports
+    .map(r => renderSingleCard(r, 0, 0))
+    .join("");
+
+  const childrenId = `group-children-${groupIndex}`;
+
+  return `
+    <div class="card card-group-header"
+         style="animation-delay:${animationDelay}ms; ${glowStyle}"
+         onclick="toggleGroup('${childrenId}')">
+      <div class="card-body">
+        <div class="card-line">Linha ${escapeHTML(group.line)}</div>
+        <div class="card-direction">→ ${escapeHTML(group.direction)}</div>
+        <div class="card-group-badge">🔥 ${count} avistamentos agrupados</div>
+      </div>
+      <div class="card-meta">
+        ${picasLabel}
+        <div class="card-time">${timeAgo(newest.created_at)}</div>
+      </div>
+    </div>
+    <div id="${childrenId}" class="card-group-children">
+      ${childCards}
+    </div>`;
+}
+
+// Toggles a group's children open/closed.
+function toggleGroup(childrenId) {
+  const el = document.getElementById(childrenId);
+  if (el) el.classList.toggle("expanded");
+}
+
+
+// ============================================================
+// STATIC DATA
 // ============================================================
 
 async function loadStaticData() {
@@ -838,17 +962,14 @@ async function loadStaticData() {
 
 
 // ============================================================
-// MODAL: open, close, and populate dropdowns
+// MODAL
 // ============================================================
 
-// Opens the modal, pre-selects the active city, and ensures
-// static data is loaded before trying to populate the line dropdown.
 async function openModal() {
   document.getElementById("reportModal").style.display = "flex";
   document.getElementById("citySelect").value = currentFilter;
   document.getElementById("successMsg").style.display = "none";
 
-  // If static data failed to load on init, retry now
   if (cachedLines.length === 0) {
     const ok = await loadStaticData();
     if (!ok) {
@@ -861,8 +982,6 @@ async function openModal() {
   populateLines(currentFilter);
 }
 
-// Closes the modal and resets all fields and button state.
-// This is the single place that cleans up — submitReport() relies on it.
 function closeModal() {
   document.getElementById("reportModal").style.display = "none";
   document.getElementById("citySelect").value = "";
@@ -877,15 +996,12 @@ function closeModal() {
 
   document.getElementById("picasSelect").value = "";
 
-  // Always re-enable the submit button so the next open starts clean
   const submitBtn = document.getElementById("submitBtn");
   submitBtn.disabled  = false;
   submitBtn.innerText = "Enviar avistamento";
   submitBtn.style.display = "block";
 }
 
-// Fills the line dropdown for a given city.
-// Also resets and disables direction dropdown since it depends on line selection.
 function populateLines(city) {
   const lineSelect = document.getElementById("lineSelect");
   lineSelect.value = "";
@@ -903,8 +1019,6 @@ function populateLines(city) {
   directionSelect.disabled = true;
 }
 
-// Fills the direction dropdown for a given line name.
-// Looks up the line's UUID to match against directions.line_id.
 function loadDirections(lineName) {
   const city = document.getElementById("citySelect").value;
   const line = cachedLines.find(l => l.name === lineName && l.city === city);
@@ -921,11 +1035,9 @@ function loadDirections(lineName) {
       .join("");
 }
 
-// Wire up dropdown change events
 document.getElementById("citySelect").addEventListener("change", e => populateLines(e.target.value));
 document.getElementById("lineSelect").addEventListener("change", e => loadDirections(e.target.value));
 
-// Close modal when tapping the backdrop
 document.getElementById("reportModal").addEventListener("click", e => {
   if (e.target === document.getElementById("reportModal")) closeModal();
 });
@@ -933,13 +1045,11 @@ document.getElementById("reportModal").addEventListener("click", e => {
 
 // ============================================================
 // SUBMIT REPORT
-// Client-side cooldown (2 min) is a UX soft-limit only. Real validation lives in the DB (RLS policy + insert trigger).
 // ============================================================
 
 async function submitReport() {
-  const COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes in milliseconds
+  const COOLDOWN_MS = 2 * 60 * 1000;
 
-  // Check localStorage for a recent submission timestamp
   const lastReport = localStorage.getItem('last_report_pica');
   if (lastReport) {
     const elapsed = Date.now() - parseInt(lastReport);
@@ -960,7 +1070,6 @@ async function submitReport() {
     return;
   }
 
-  // Disable button to prevent double-submit while request is in flight
   const submitBtn = document.getElementById("submitBtn");
   submitBtn.disabled  = true;
   submitBtn.innerText = "A enviar...";
@@ -974,20 +1083,16 @@ async function submitReport() {
 
   if (error) {
     alert("Algo correu mal. Tenta outra vez.");
-    // Reset button here — closeModal() won't be called on error
     submitBtn.disabled  = false;
     submitBtn.innerText = "Enviar avistamento";
   } else {
-    // Store timestamp for cooldown check on next attempt
     localStorage.setItem('last_report_pica', Date.now());
-
-    // Show success state, then auto-close and refresh feed
     document.getElementById("successMsg").style.display = "block";
     submitBtn.style.display = "none";
 
     setTimeout(() => {
-      closeModal();     // resets all form state including button
-      fetchReports();   // pull fresh data to show the new sighting
+      closeModal();
+      fetchReports();
     }, 2000);
   }
 }
@@ -997,8 +1102,6 @@ async function submitReport() {
 // FEED: fetch, render, realtime
 // ============================================================
 
-// Fetches sightings from the last 24h for the active city.
-// Queries the `recent_reports` view (server-side 24h window).
 async function fetchReports() {
   const { data, error } = await supabaseClient
     .from("recent_reports")
@@ -1024,8 +1127,6 @@ async function fetchReports() {
     : "Onde anda o pica?";
 }
 
-// Renders cachedReports into the feed.
-// If cachedLines is empty (static data failed), fires a background reload so colors appear on the next render cycle without blocking the feed.
 function renderReports() {
   const container = document.getElementById("updates-list");
 
@@ -1044,37 +1145,32 @@ function renderReports() {
     return;
   }
 
-  // If line colors aren't loaded yet, try again in the background
   if (cachedLines.length === 0) {
     loadStaticData();
   }
 
-  container.innerHTML = cachedReports.map((r, i) => {
-    // Look up the hex color for this line (falls back to default grey)
-    const lineObj   = cachedLines.find(l => l.name === r.line && l.city === r.city);
-    const lineColor = lineObj ? lineObj.color : "#3f3f46";
+  // Group reports using the sliding 30-min window algorithm
+  const groups = groupReports(cachedReports);
 
-    const picasLabel = r.picas
-      ? `<div class="card-picas">${r.picas >= 3 ? "3+" : r.picas} pica${r.picas !== 1 ? "s" : ""}</div>`
-      : "";
+  let cardIndex = 0;
+  container.innerHTML = groups.map((group, groupIndex) => {
+    const delay = cardIndex * 40;
+    cardIndex++;
 
-    return `
-      <div class="card" style="animation-delay:${i * 40}ms; border-left-color:${lineColor}">
-        <div class="card-body">
-          <div class="card-line">Linha ${escapeHTML(r.line)}</div>
-          <div class="card-direction">→ ${escapeHTML(r.direction)}</div>
-        </div>
-        <div class="card-meta">
-          ${picasLabel}
-          <div class="card-time">${timeAgo(r.created_at)}</div>
-        </div>
-      </div>
-    `;
+    if (group.reports.length >= 3) {
+      // Render as a collapsible group card
+      return renderGroupCard(group, groupIndex, delay);
+    } else {
+      // Render each report as an individual card
+      return group.reports.map(r => {
+        const d = cardIndex * 40;
+        cardIndex++;
+        return renderSingleCard(r, cardIndex, d);
+      }).join("");
+    }
   }).join("");
 }
 
-// Sets up a Supabase realtime subscription for INSERT events on the active city.
-// Tears down the previous channel first so switching cities doesn't leave stale subscriptions open.
 function setupRealtime() {
   if (realtimeChannel) {
     supabaseClient.removeChannel(realtimeChannel);
@@ -1092,7 +1188,6 @@ function setupRealtime() {
         filter: `city=eq.${currentFilter}`
       },
       payload => {
-        // Deduplicate: ignore if this report is already in the cache
         const exists = cachedReports.some(r => r.id === payload.new.id);
         if (!exists) {
           cachedReports.unshift(payload.new);
@@ -1109,17 +1204,14 @@ function setupRealtime() {
 
 // ============================================================
 // CITY FILTER
-// Switching city updates state, re-fetches, and re-subscribes.
 // ============================================================
 
 async function setFilter(city) {
   currentFilter = city;
 
-  // Update active button style
   document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
   document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
 
-  // Show loading state while fetch is in flight
   document.getElementById("updates-list").innerHTML = `<div class="empty">Já, já...</div>`;
 
   await fetchReports();
@@ -1131,8 +1223,6 @@ async function setFilter(city) {
 // ABOUT PANEL
 // ============================================================
 
-// Build the email link entirely in JS — no email address in the HTML at all, because Cloudflare scans for @ symbols
-// and injects a script that breaks page load order even when there's no mailto: href.
 const email = ["info", "ondeandaopica.pt"].join("@");
 document.getElementById("emailLink").href = "mailto:" + email;
 document.getElementById("emailDisplay").innerText = email;
@@ -1145,7 +1235,6 @@ function closeAbout() {
   document.getElementById("aboutPanel").style.display = "none";
 }
 
-// Close about panel when tapping the backdrop
 document.getElementById("aboutPanel").addEventListener("click", e => {
   if (e.target === document.getElementById("aboutPanel")) closeAbout();
 });
@@ -1153,40 +1242,26 @@ document.getElementById("aboutPanel").addEventListener("click", e => {
 
 // ============================================================
 // PWA INSTALL BANNER
-// The browser fires beforeinstallprompt when it decides the user is eligible to install.
-// We suppress the default mini-infobar, stash the event, and show our own banner instead.
-// Only fires on Chrome/Edge/Android — not on iOS Safari.
 // ============================================================
 
 window.addEventListener('beforeinstallprompt', e => {
-  // Suppress the browser's default install prompt
   e.preventDefault();
-
-  // Stash it so triggerInstall() can call it later
   installPromptEvt = e;
-
-  // Show our banner
   document.getElementById("installBanner").classList.add("visible");
 });
 
-// User tapped "Instalar" — trigger the real browser prompt
 async function triggerInstall() {
   if (!installPromptEvt) return;
-
   installPromptEvt.prompt();
   const { outcome } = await installPromptEvt.userChoice;
-
-  // Whether they accepted or dismissed, we only get one shot — clear it
   installPromptEvt = null;
   document.getElementById("installBanner").classList.remove("visible");
 }
 
-// User tapped "Agora não" — hide the banner for this session
 function dismissInstall() {
   document.getElementById("installBanner").classList.remove("visible");
 }
 
-// Hide the banner if the app is already installed
 window.addEventListener('appinstalled', () => {
   document.getElementById("installBanner").classList.remove("visible");
   installPromptEvt = null;
@@ -1195,7 +1270,6 @@ window.addEventListener('appinstalled', () => {
 
 // ============================================================
 // INIT
-// Runs once on page load. Loads static data, fetches the feed, sets up realtime, and registers background intervals.
 // ============================================================
 
 async function init() {
@@ -1203,13 +1277,9 @@ async function init() {
   await fetchReports();
   setupRealtime();
 
-  // Safety net: re-fetch every 5 minutes in case realtime drops
   setInterval(() => fetchReports(), 300000);
-
-  // Refresh relative timestamps ("há X min") every 60s without a network call
   setInterval(() => renderReports(), 60000);
 
-  // Reconnect if the device comes back online
   window.addEventListener('online',  () => { updateStatus(true); fetchReports(); setupRealtime(); });
   window.addEventListener('offline', () => updateStatus(false));
 }
