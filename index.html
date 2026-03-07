@@ -238,11 +238,15 @@ async function submitReport(){
   const COOLDOWN_MINUTES = 2;
   const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
 
-  const lastReport = localStorage.getItem('last_report_pica');
-  if (lastReport && (Date.now() - parseInt(lastReport)) < COOLDOWN_MS) {
-    alert(`Calma! Só podes reportar uma vez a cada ${COOLDOWN_MINUTES} minutos.`);
+const lastReport = localStorage.getItem('last_report_pica');
+if (lastReport) {
+  const elapsed = Date.now() - parseInt(lastReport);
+  if (elapsed < COOLDOWN_MS) {
+    const secondsLeft = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+    alert(`Calma lá! Espera ${secondsLeft}s antes de reportar novamente.`);
     return;
   }
+}
 
   const city = document.getElementById("citySelect").value;
   const line = document.getElementById("lineSelect").value;
