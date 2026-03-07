@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-pt">
+
+<!-- ============================================================
+     HEAD
+     Meta tags, PWA setup, and all styles.
+     ============================================================ -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -9,12 +14,15 @@
 <link rel="apple-touch-icon" href="/preview.png">
 <link rel="shortcut icon" href="/preview.png">
 <link rel="manifest" href="/manifest.json">
+
+<!-- Register service worker for PWA / offline support -->
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
   }
 </script>
 
+<!-- Open Graph tags for link previews -->
 <meta name="theme-color" content="#020617">
 <meta property="og:title" content="Onde anda o pica?">
 <meta property="og:description" content="O passe pesa na carteira — a multa ainda mais.">
@@ -23,27 +31,40 @@
 <meta property="og:image" content="https://ondeandaopica.pt/preview.png">
 
 <style>
+/* ---- Base layout ---- */
 body { margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#020617;color:#f1f5f9;padding-bottom:50px;}
 .container { max-width:680px;margin:0 auto;padding:20px;text-align:center;position:relative;}
 header { padding-top: 50px; }
 h1 { font-size:2.2rem; margin-bottom:6px; letter-spacing:-0.02em; }
 .subtitle { opacity:0.6;font-size:0.95rem;margin-bottom:28px;line-height:1.5;}
+
+/* ---- Top-right "about" link ---- */
 .about-btn { position:absolute;top:20px;right:20px;font-size:0.8rem;text-decoration:none;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;transition:0.2s ease;}
 .about-btn:hover { background:rgba(255,255,255,0.14);}
+
+/* ---- Report CTA badge ---- */
 .cta-wrapper { margin-bottom:35px;}
 .cta-badge { display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px 22px;backdrop-filter:blur(8px);}
 .cta-text { font-size:0.9rem;margin-bottom:12px;opacity:0.85;}
 .cta-button { display:inline-block;background:#e5392b;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:10px;font-size:0.85rem;font-weight:600;box-shadow:0 6px 18px rgba(229,57,43,0.25);cursor:pointer;}
+
+/* ---- City filter buttons ---- */
 .filters { margin-bottom:18px;}
 .filters button { background:#0f172a;border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;padding:8px 16px;margin:4px;border-radius:10px;cursor:pointer;font-size:0.85rem;font-weight:600;}
 .filters button.active { background:#f1f5f9;color:#020617;}
+
+/* ---- Live/stale status bar ---- */
 .status-bar { display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:18px;opacity:0.8;}
 .indicator-dot { height:8px;width:8px;border-radius:50%;display:inline-block;margin-right:6px;}
 .live-dot { background-color:#22c55e;box-shadow:0 0 8px #22c55e;}
 .stale-dot { background-color:#f59e0b;box-shadow:0 0 8px #f59e0b;}
+
+/* ---- Sighting cards ---- */
 .card { background:#0f172a;border:1px solid rgba(255,255,255,0.05);border-left:6px solid #334155;border-radius:14px;padding:16px;margin-bottom:14px;text-align:left;}
 .time { opacity:0.6;font-size:0.85rem;margin-top:6px;}
 .empty { text-align:center;padding:40px;opacity:0.4;border:2px dashed #1e293b;border-radius:14px;}
+
+/* ---- Report modal ---- */
 .modal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:100;}
 .modal-content { background:#0f172a;padding:24px;border-radius:14px;width:90%;max-width:400px;text-align:left;}
 .modal-content h3 { margin-top:0;}
@@ -52,6 +73,8 @@ h1 { font-size:2.2rem; margin-bottom:6px; letter-spacing:-0.02em; }
 }
 .modal-content button:disabled { opacity: 0.5; cursor: not-allowed; }
 .close-btn { text-align:right;font-size:0.8rem;cursor:pointer;opacity:0.6;margin-bottom:10px;}
+
+/* ---- Success message inside modal ---- */
 .success-msg {
   display:none;
   background:rgba(34,197,94,0.12);
@@ -65,43 +88,59 @@ h1 { font-size:2.2rem; margin-bottom:6px; letter-spacing:-0.02em; }
 }
 </style>
 </head>
+
+
+<!-- ============================================================
+     BODY: HTML structure
+     ============================================================ -->
 <body>
 
 <div class="container">
-<header>
-  <a href="https://github.com/placeholdertemporary/ondeandaopica" target="_blank" rel="noopener noreferrer" class="about-btn">Sobre o projeto</a>
-  <h1>Onde anda o pica?</h1>
-  <div class="subtitle">O passe pesa na carteira — a multa ainda mais.</div>
-</header>
+  <header>
+    <a href="https://github.com/placeholdertemporary/ondeandaopica" target="_blank" rel="noopener noreferrer" class="about-btn">Sobre o projeto</a>
+    <h1>Onde anda o pica?</h1>
+    <div class="subtitle">O passe pesa na carteira — a multa ainda mais.</div>
+  </header>
 
-<div class="cta-wrapper">
-  <div class="cta-badge">
-    <div class="cta-text">Viste um pica? Avisa a malta.</div>
-    <div class="cta-button" onclick="openModal()">REPORTA AQUI</div>
+  <!-- CTA: triggers the report modal -->
+  <div class="cta-wrapper">
+    <div class="cta-badge">
+      <div class="cta-text">Viste um pica? Avisa a malta.</div>
+      <div class="cta-button" onclick="openModal()">REPORTA AQUI</div>
+    </div>
   </div>
-</div>
 
-<div class="filters">
-  <button id="btn-lisboa" class="active" onclick="setFilter('Lisboa')">Lisboa</button>
-  <button id="btn-porto" onclick="setFilter('Porto')">Porto</button>
-</div>
-
-<div class="status-bar">
-  <div>
-    <span id="status-dot" class="indicator-dot stale-dot"></span>
-    <span id="status-text">A conectar...</span>
+  <!-- City filter: Lisboa is active by default -->
+  <div class="filters">
+    <button id="btn-lisboa" class="active" onclick="setFilter('Lisboa')">Lisboa</button>
+    <button id="btn-porto" onclick="setFilter('Porto')">Porto</button>
   </div>
-  <div id="last-update">...</div>
+
+  <!-- Live/stale indicator + last sync timestamp -->
+  <div class="status-bar">
+    <div>
+      <span id="status-dot" class="indicator-dot stale-dot"></span>
+      <span id="status-text">A conectar...</span>
+    </div>
+    <div id="last-update">...</div>
+  </div>
+
+  <!-- Feed: sighting cards are injected here by renderReports() -->
+  <div id="updates-list"></div>
 </div>
 
-<div id="updates-list"></div>
-</div>
 
+<!-- ============================================================
+     MODAL: report form
+     City → Line → Direction → Nº picas
+     Lines and directions are populated dynamically from the DB.
+     ============================================================ -->
 <div id="reportModal" class="modal">
   <div class="modal-content">
     <div class="close-btn" onclick="closeModal()">Fechar ✕</div>
     <h3>Reportar avistamento</h3>
 
+    <!-- Shown after a successful insert, then modal auto-closes -->
     <div id="successMsg" class="success-msg">✓ Avistamento reportado, obrigado!</div>
 
     <select id="citySelect">
@@ -110,10 +149,12 @@ h1 { font-size:2.2rem; margin-bottom:6px; letter-spacing:-0.02em; }
       <option value="Porto">Porto</option>
     </select>
 
+    <!-- Populated by populateLines() when city changes -->
     <select id="lineSelect">
       <option value="" disabled selected hidden>Linha</option>
     </select>
 
+    <!-- Populated by loadDirections() when line changes -->
     <select id="directionSelect">
       <option value="" disabled selected hidden>Direção</option>
     </select>
@@ -129,19 +170,47 @@ h1 { font-size:2.2rem; margin-bottom:6px; letter-spacing:-0.02em; }
   </div>
 </div>
 
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+
+<!-- Supabase JS client (loaded from CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+
+// ============================================================
+// CONFIG & SUPABASE CLIENT
+// ============================================================
+
 const supabaseClient = window.supabase.createClient(
   "https://yluetigafaiuwxotezay.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsdWV0aWdhZmFpdXd4b3RlemF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2ODc5NDEsImV4cCI6MjA4NzI2Mzk0MX0.spjBm2SFPUfbLWxl1hzhL0nssUsW0l73XRgTVS3MuQU"
 );
 
+
+// ============================================================
+// STATE
+// These variables are shared across functions.
+// cachedLines/Directions are loaded once on init and reused.
+// cachedReports is refreshed on filter change and realtime push.
+// realtimeChannel is stored so it can be torn down on filter change.
+// ============================================================
+
 let cachedReports = [];
 let cachedLines = [];
 let cachedDirections = [];
-let currentFilter = "Lisboa";
-let realtimeChannel = null;
+let currentFilter = "Lisboa";   // Active city filter (Lisboa | Porto)
+let realtimeChannel = null;     // Holds the active Supabase realtime subscription
 
+
+// ============================================================
+// UTILITIES
+// ============================================================
+
+// Escapes user-generated strings before injecting into innerHTML.
+// Prevents XSS even though all data comes from our own DB.
 function escapeHTML(str) {
   if (!str) return "";
   return str.toString().replace(/[&<>"']/g, m => ({
@@ -149,13 +218,79 @@ function escapeHTML(str) {
   }[m]));
 }
 
-// IMPROVEMENT 1: openModal retries loadStaticData if cache is empty,
-// and shows a clear error in the dropdown if it still fails.
-async function openModal(){
+// Converts a UTC timestamp into a Portuguese relative time string.
+// Called client-side so no extra DB query is needed.
+function timeAgo(ts) {
+  const diffMin = Math.floor((Date.now() - new Date(ts)) / 60000);
+
+  if (diffMin < 1)  return "agora mesmo";
+  if (diffMin === 1) return "há 1 min";
+  if (diffMin < 60) return `há ${diffMin} min`;
+
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours === 1)  return "há 1h";
+  if (diffHours < 24)  return `há ${diffHours}h`;
+
+  return "há mais de 24h";
+}
+
+// Updates the live/stale dot and label in the status bar.
+function updateStatus(isLive) {
+  const dot  = document.getElementById("status-dot");
+  const text = document.getElementById("status-text");
+  if (isLive) {
+    dot.className = "indicator-dot live-dot";
+    text.innerText = "Live";
+  } else {
+    dot.className = "indicator-dot stale-dot";
+    text.innerText = "Stale";
+  }
+}
+
+
+// ============================================================
+// STATIC DATA (lines + directions)
+// Loaded once on init. Returns true/false so callers can react to failure.
+// ============================================================
+
+async function loadStaticData() {
+  const { data: linesData, error: linesError } = await supabaseClient
+    .from("lines")
+    .select("*")
+    .order("name");
+
+  if (linesError) {
+    console.error("Error loading lines:", linesError);
+    updateStatus(false);
+    return false;
+  }
+  cachedLines = linesData || [];
+
+  const { data: dirData, error: dirError } = await supabaseClient
+    .from("directions")
+    .select("*")
+    .order("label");
+
+  if (!dirError) {
+    cachedDirections = dirData || [];
+  }
+
+  return true;
+}
+
+
+// ============================================================
+// MODAL: open, close, and populate dropdowns
+// ============================================================
+
+// Opens the modal, pre-selects the active city, and ensures
+// static data is loaded before trying to populate the line dropdown.
+async function openModal() {
   document.getElementById("reportModal").style.display = "flex";
   document.getElementById("citySelect").value = currentFilter;
   document.getElementById("successMsg").style.display = "none";
 
+  // If static data failed to load on init, retry now
   if (cachedLines.length === 0) {
     const ok = await loadStaticData();
     if (!ok) {
@@ -168,40 +303,25 @@ async function openModal(){
   populateLines(currentFilter);
 }
 
-// IMPROVEMENT 2: closeModal always resets the submit button to a clean state,
-// so no race condition can leave it hidden or disabled on the next open.
-function closeModal(){
+// Closes the modal and resets all fields and button state.
+// This is the single place that cleans up — submitReport() relies on it.
+function closeModal() {
   document.getElementById("reportModal").style.display = "none";
   document.getElementById("citySelect").value = "";
-  document.getElementById("lineSelect").innerHTML = `<option value="" disabled selected hidden>Linha</option>`;
+  document.getElementById("lineSelect").innerHTML      = `<option value="" disabled selected hidden>Linha</option>`;
   document.getElementById("directionSelect").innerHTML = `<option value="" disabled selected hidden>Direção</option>`;
   document.getElementById("picasSelect").value = "";
 
+  // Always re-enable the submit button so the next open starts clean
   const submitBtn = document.getElementById("submitBtn");
-  submitBtn.disabled = false;
+  submitBtn.disabled  = false;
   submitBtn.innerText = "Enviar";
   submitBtn.style.display = "block";
 }
 
-// IMPROVEMENT 1: loadStaticData now returns true/false to signal success or failure.
-async function loadStaticData(){
-  const { data: linesData, error: linesError } = await supabaseClient.from("lines").select("*").order("name");
-  if (linesError) {
-    console.error("Error loading lines:", linesError);
-    updateStatus(false);
-    return false;
-  }
-  cachedLines = linesData || [];
-
-  const { data: dirData, error: dirError } = await supabaseClient.from("directions").select("*").order("label");
-  if (!dirError) {
-    cachedDirections = dirData || [];
-  }
-
-  return true;
-}
-
-function populateLines(city){
+// Fills the line dropdown for a given city.
+// Also resets direction dropdown since it depends on line selection.
+function populateLines(city) {
   const lineSelect = document.getElementById("lineSelect");
   lineSelect.value = "";
   document.getElementById("directionSelect").value = "";
@@ -217,7 +337,9 @@ function populateLines(city){
     `<option value="" disabled selected hidden>Direção</option>`;
 }
 
-function loadDirections(lineName){
+// Fills the direction dropdown for a given line name.
+// Looks up the line's UUID to match against directions.line_id.
+function loadDirections(lineName) {
   const city = document.getElementById("citySelect").value;
   const line = cachedLines.find(l => l.name === lineName && l.city === city);
   if (!line) return;
@@ -226,40 +348,48 @@ function loadDirections(lineName){
 
   document.getElementById("directionSelect").innerHTML =
     `<option value="" disabled selected hidden>Direção</option>` +
-    matchedDirs.map(d =>
-      `<option value="${escapeHTML(d.label)}">${escapeHTML(d.label)}</option>`
-    ).join("");
+    matchedDirs
+      .map(d => `<option value="${escapeHTML(d.label)}">${escapeHTML(d.label)}</option>`)
+      .join("");
 }
 
+// Wire up dropdown change events
 document.getElementById("citySelect").addEventListener("change", e => populateLines(e.target.value));
 document.getElementById("lineSelect").addEventListener("change", e => loadDirections(e.target.value));
 
-async function submitReport(){
-  const COOLDOWN_MINUTES = 2;
-  const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
 
-const lastReport = localStorage.getItem('last_report_pica');
-if (lastReport) {
-  const elapsed = Date.now() - parseInt(lastReport);
-  if (elapsed < COOLDOWN_MS) {
-    const secondsLeft = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
-    alert(`Calma lá! Espera ${secondsLeft}s antes de reportar novamente.`);
-    return;
+// ============================================================
+// SUBMIT REPORT
+// Client-side cooldown (2 min) is a UX soft-limit only. Validation lives in the DB (RLS policy + insert trigger).
+// ============================================================
+
+async function submitReport() {
+  const COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+  // Check localStorage for a recent submission timestamp
+  const lastReport = localStorage.getItem('last_report_pica');
+  if (lastReport) {
+    const elapsed = Date.now() - parseInt(lastReport);
+    if (elapsed < COOLDOWN_MS) {
+      const secondsLeft = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+      alert(`Calma lá! Espera ${secondsLeft}s antes de reportar novamente.`);
+      return;
+    }
   }
-}
 
-  const city = document.getElementById("citySelect").value;
-  const line = document.getElementById("lineSelect").value;
+  const city      = document.getElementById("citySelect").value;
+  const line      = document.getElementById("lineSelect").value;
   const direction = document.getElementById("directionSelect").value;
-  const picas = document.getElementById("picasSelect").value;
+  const picas     = document.getElementById("picasSelect").value;
 
   if (!city || !line || !direction) {
     alert("Preenche todos os campos obrigatórios.");
     return;
   }
 
+  // Disable button to prevent double-submit while request is in flight
   const submitBtn = document.getElementById("submitBtn");
-  submitBtn.disabled = true;
+  submitBtn.disabled  = true;
   submitBtn.innerText = "A enviar...";
 
   const { error } = await supabaseClient.from("reports").insert([{
@@ -271,44 +401,37 @@ if (lastReport) {
 
   if (error) {
     alert("Erro ao enviar. Tenta de novo.");
-    // IMPROVEMENT 2: on error, reset button here (closeModal won't be called)
-    submitBtn.disabled = false;
+    // Reset button here — closeModal() won't be called on error
+    submitBtn.disabled  = false;
     submitBtn.innerText = "Enviar";
   } else {
+    // Store timestamp for cooldown check on next attempt
     localStorage.setItem('last_report_pica', Date.now());
 
-    const msg = document.getElementById("successMsg");
-    msg.style.display = "block";
+    // Show success state, then auto-close and refresh feed
+    document.getElementById("successMsg").style.display = "block";
     submitBtn.style.display = "none";
 
-    // IMPROVEMENT 2: setTimeout is now simplified — closeModal handles all button reset
     setTimeout(() => {
-      closeModal();
-      fetchReports();
+      closeModal();     // resets all form state including button
+      fetchReports();   // pull fresh data to show the new sighting
     }, 2000);
   }
 }
 
-function timeAgo(ts){
-  const diffMin = Math.floor((Date.now() - new Date(ts)) / 60000);
 
-  if (diffMin < 1) return "agora mesmo";
-  if (diffMin === 1) return "há 1 min";
-  if (diffMin < 60) return `há ${diffMin} min`;
+// ============================================================
+// FEED: fetch, render, realtime
+// ============================================================
 
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours === 1) return "há 1h";
-  if (diffHours < 24) return `há ${diffHours}h`;
-
-  return "há mais de 24h";
-}
-
-async function fetchReports(){
+// Fetches sightings from the last 24h for the active city.
+// Queries the `recent_reports` view (server-side 24h window).
+async function fetchReports() {
   const { data, error } = await supabaseClient
     .from("recent_reports")
     .select("*")
     .eq("city", currentFilter)
-    .order("created_at", {ascending: false});
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Error fetching reports:", error);
@@ -322,10 +445,12 @@ async function fetchReports(){
 
   document.getElementById("last-update").innerText =
     "Sincronizado: " +
-    new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'});
+    new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 }
 
-function renderReports(){
+// Renders cachedReports into the feed.
+// If cachedLines is empty (static data failed), fires a background reload so colors appear on the next render cycle without blocking the feed.
+function renderReports() {
   const container = document.getElementById("updates-list");
 
   if (cachedReports.length === 0) {
@@ -333,8 +458,14 @@ function renderReports(){
     return;
   }
 
+  // If line colors aren't loaded yet, try again in the background
+  if (cachedLines.length === 0) {
+    loadStaticData();
+  }
+
   container.innerHTML = cachedReports.map(r => {
-    const lineObj = cachedLines.find(l => l.name === r.line && l.city === r.city);
+    // Look up the hex color for this line (falls back to default grey)
+    const lineObj   = cachedLines.find(l => l.name === r.line && l.city === r.city);
     const lineColor = lineObj ? lineObj.color : "#334155";
 
     return `
@@ -347,6 +478,8 @@ function renderReports(){
   }).join("");
 }
 
+// Sets up a Supabase realtime subscription for INSERT events on the active city.
+// Tears down the previous channel first so switching cities doesn't leave stale subscriptions open.
 function setupRealtime() {
   if (realtimeChannel) {
     supabaseClient.removeChannel(realtimeChannel);
@@ -355,7 +488,8 @@ function setupRealtime() {
   realtimeChannel = supabaseClient.channel(`reports-${currentFilter}`);
 
   realtimeChannel
-    .on('postgres_changes',
+    .on(
+      'postgres_changes',
       {
         event: 'INSERT',
         schema: 'public',
@@ -363,6 +497,7 @@ function setupRealtime() {
         filter: `city=eq.${currentFilter}`
       },
       payload => {
+        // Deduplicate: ignore if this report is already in the cache
         const exists = cachedReports.some(r => r.id === payload.new.id);
         if (!exists) {
           cachedReports.unshift(payload.new);
@@ -370,59 +505,56 @@ function setupRealtime() {
         }
       }
     )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') updateStatus(true);
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED')                              updateStatus(true);
       else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') updateStatus(false);
     });
 }
 
-async function setFilter(city){
+
+// ============================================================
+// CITY FILTER
+// Switching city updates state, re-fetches, and re-subscribes.
+// ============================================================
+
+async function setFilter(city) {
   currentFilter = city;
+
+  // Update active button style
   document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
   document.getElementById(`btn-${city.toLowerCase()}`).classList.add("active");
 
+  // Show loading state while fetch is in flight
   document.getElementById("updates-list").innerHTML = `<div class="empty">A carregar...</div>`;
 
   await fetchReports();
   setupRealtime();
 }
 
-function updateStatus(isLive) {
-  const dot = document.getElementById("status-dot");
-  const text = document.getElementById("status-text");
-  if (isLive) {
-    dot.className = "indicator-dot live-dot";
-    text.innerText = "Live";
-  } else {
-    dot.className = "indicator-dot stale-dot";
-    text.innerText = "Stale";
-  }
-}
 
-async function init(){
+// ============================================================
+// INIT
+// Runs once on page load. Loads static data, fetches the feed, sets up realtime, and registers background intervals.
+// ============================================================
+
+async function init() {
   await loadStaticData();
   await fetchReports();
   setupRealtime();
 
-  // Safety net: background polling every 5 minutes
-  setInterval(() => {
-    fetchReports();
-  }, 300000);
+  // Safety net: re-fetch every 5 minutes in case realtime drops
+  setInterval(() => fetchReports(), 300000);
 
-  // Local UI tick: updates "há X min" every 60s without network calls
-  setInterval(() => {
-    renderReports();
-  }, 60000);
+  // Refresh relative timestamps ("há X min") every 60s without a network call
+  setInterval(() => renderReports(), 60000);
 
-  window.addEventListener('online', () => {
-    updateStatus(true);
-    fetchReports();
-    setupRealtime();
-  });
+  // Reconnect if the device comes back online
+  window.addEventListener('online',  () => { updateStatus(true); fetchReports(); setupRealtime(); });
   window.addEventListener('offline', () => updateStatus(false));
 }
 
 init();
+
 </script>
 </body>
 </html>
