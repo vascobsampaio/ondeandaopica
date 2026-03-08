@@ -12,12 +12,13 @@ Este projeto foi construído com uma filosofia de baixo custo e simplicidade est
 
 **Arquitetura:** HTML + Vanilla JS → PostgreSQL
 
-| Camada        | Tecnologia              | Função                              |
-|---------------|-------------------------|--------------------------------------|
-| Frontend      | HTML + JavaScript       | UI, fetch de dados e renderização    |
-| Backend       | Supabase (Postgres)     | Armazenamento estruturado com RLS    |
-| Hosting       | GitHub Pages            | Distribuição sob domínio próprio     |
-
+| Camada        | Tecnologia              | Função                                              |
+|---------------|-------------------------|-----------------------------------------------------|
+| Frontend      | HTML + JavaScript       | UI, fetch de dados e renderização                   |
+| Backend       | Supabase (Postgres)     | Armazenamento estruturado com RLS                   |
+| Realtime      | Supabase Realtime       | Atualizações em tempo real via WebSocket            |
+| Notificações  | Supabase Edge Functions | Push notifications via Web Push API (VAPID)         |
+| Hosting       | GitHub Pages            | Distribuição sob domínio próprio                    |
 
 ## 🤝 Contribuir
 
@@ -25,16 +26,7 @@ Se quiseres ajudar, abre um issue, manda um PR, ou escreve para info@ondeandaopi
 
 - 💻 Código: Pull requests são bem-vindos, sejam correções ou novas funcionalidades.
 - 🎨 UX/UI: Sugestões para tornar a interface mais fluida, especialmente em mobile.
-- 🗺️ Expansão: Ajudar a mapear e validar as linhas e direções de comboios.
-
-
-## 🛠 Roadmap
-
-Ideias em aberto:
-
-- Versão PWA instalável
-- Notificações de alerta por linha
-- Expansão para redes ferroviárias
+- 🗺️ Expansão: Ajudar a mapear e validar as linhas e direções ferroviárias.
 
 
 ## ⚠️ Disclaimer
@@ -43,4 +35,4 @@ Projeto experimental e sem fins lucrativos, criado para partilha informal de inf
 
 Não tem qualquer afiliação a operadores de transportes públicos ou privados.
 
-_Desenvolvido por um humano. Mantido pela comunidade._
+_Desenvolvido por um humano, mantido pela comunidade._
