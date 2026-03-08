@@ -979,7 +979,7 @@ function toggleGroup(childrenId) {
 // ============================================================
 
 function handleBellClick(event) {
-  event.stopPropagation();
+  event.stopPropagation(); // prevent group card toggle from firing
   const btn = event.currentTarget;
   toggleSubscription(btn.dataset.city, btn.dataset.line, btn.dataset.direction);
 }
@@ -1009,25 +1009,41 @@ async function toggleSubscription(city, line, direction) {
     return;
   }
 
+  // Check browser support. PushManager is the Web Push API — without it, we can't create a push subscription at all.
+  // Firefox on Android is a special case: it supports push, but only when the app is running as an installed PWA (standalone mode),
+  // not from a regular browser tab. We detect this and give a specific actionable message.
   if (!('Notification' in window) || !('PushManager' in window)) {
-    alert("O teu browser não suporta notificações push. Tenta no Chrome ou Firefox.");
+    const isFirefox   = navigator.userAgent.includes('Firefox');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isFirefox && !isStandalone) {
+      alert("No Firefox, as notificações só funcionam quando a app está instalada. Usa o menu do browser para adicionar ao ecrã inicial e abre por aí.");
+    } else {
+      alert("O teu browser não suporta notificações push. Tenta no Chrome ou Firefox.");
+    }
     return;
   }
 
+  // Three possible permission states:
+  // 'denied'  — user previously blocked us; we can't re-prompt programmatically
+  // 'default' — never asked yet; show the native browser dialog now
+  // 'granted' — already allowed; proceed silently
   let permission = Notification.permission;
   if (permission === 'denied') {
     alert("Bloqueaste as notificações para este site. Para ativar, vai às definições do browser e permite notificações para ondeandaopica.pt.");
     return;
   }
   if (permission === 'default') permission = await Notification.requestPermission();
-  if (permission !== 'granted') return;
+  if (permission !== 'granted') return; // user dismissed the prompt — fail silently
 
   const registration = await navigator.serviceWorker.ready;
 
   let pushSubscription;
   try {
+    // If a push subscription already exists for this origin + VAPID key pair,
+    // the browser returns the existing one rather than creating a duplicate.
     pushSubscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
+      userVisibleOnly: true, // every push must show a notification (browser requirement)
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
   } catch (err) {
@@ -1036,8 +1052,8 @@ async function toggleSubscription(city, line, direction) {
     return;
   }
 
-  const subJson  = pushSubscription.toJSON();
-  const { error } = await supabaseClient
+  const subJson    = pushSubscription.toJSON();
+  const { error }  = await supabaseClient
     .from("subscriptions")
     .upsert(
       { endpoint: subJson.endpoint, p256dh: subJson.keys.p256dh, auth: subJson.keys.auth, city, line, direction },
