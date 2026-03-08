@@ -1046,7 +1046,7 @@ async function toggleSubscription(city, line, direction) {
     .from("subscriptions")
     .upsert(
       { endpoint: subJson.endpoint, p256dh: subJson.keys.p256dh, auth: subJson.keys.auth, city, line, direction },
-      { onConflict: "endpoint, city, line, direction" }
+      { onConflict: "endpoint,city,line,direction" }
     );
   if (error) {
     console.error("Failed to save subscription:", error);
