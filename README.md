@@ -16,8 +16,8 @@ Este projeto foi construído com uma filosofia de baixo custo e simplicidade est
 |---------------|-------------------------|-----------------------------------------------------|
 | Frontend      | HTML + JavaScript       | UI, fetch de dados e renderização                   |
 | Backend       | Supabase (Postgres)     | Armazenamento estruturado com RLS                   |
-| Realtime      | Supabase Realtime       | Atualizações em tempo real via WebSocket            |
-| Notificações  | Supabase Edge Functions | Notificações push via Web Push API (VAPID)          |
+| Realtime      | Supabase Realtime       | Atualizações via WebSocket                          |
+| Notificações  | Supabase Edge Functions | Notificações via Web Push API                       |
 | Hosting       | GitHub Pages            | Distribuição sob domínio próprio                    |
 
 ## 🤝 Contribuir
